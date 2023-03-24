@@ -5,6 +5,7 @@ import random as rnd
 from idlelib.tooltip import Hovertip as Ht
 
 all_verbs = []
+all_nouns = []
 
 pronounsn = {'я':'i', 'ты':'you', 'он':'he', 'она':'she', 'оно':'it',
              'мы':'we', 'вы':'you (polite/plural)', 'они':'they'}
@@ -13,98 +14,192 @@ ylist = ilist
 ylist.append('ц')
 alist = ylist
 olist = ['ж', 'ч', 'ш', 'щ', 'ц']
-vowels_list = ['а', 'я', 'у', 'ю', 'о', 'е', 'ё', 'и', 'ы']
+vowels = ['а', 'я', 'у', 'ю', 'о', 'е', 'ё', 'и', 'ы']
+
 
 class Noun:
-    def __init__(self, noun, gender, animate):
+    def __init__(self, noun, nom_stem, nom_end, gender, animate):
+        self.noun = noun
         self.gender = gender
         self.animate = animate
-        self.g = '-'
-        self.a = '-'
-        self.p = '-'
-        self.d = '-'
-        self.i = '-'
+        self.nom_stem = nom_stem
+        self.nom_end = nom_end
+
+        global all_nouns
+        all_nouns.append(self)
+
+        self.g = [[self.nom_stem], [self.nom_stem]]
+        self.a = [[self.nom_stem], [self.nom_stem]]
+        self.p = [[self.nom_stem], [self.nom_stem]]
+        self.d = [[self.nom_stem], [self.nom_stem]]
+        self.i = [[self.nom_stem], [self.nom_stem]]
+        self.plural = ''
         # letters stand for genitive, accusative, prepositional, dative, and instrumental (cases).
-        # nouns have different endings in each case depending on the letter they end in.
+        # nouns have different endings in each case depending on the letter they end in,
+        # as well as different plural endings in both the nominative (default) case and others.
         # in the accusative case, it is relevant whether the noun is animate or not.
         # it is also sometimes relevant where the word is stressed. i'm still figuring out how to incorporate this.
-        if noun[-1] == 'a':
-            if noun.index(-2) in ilist:
-                # some vowels (ы, ю, я) can't follow certain consonants.
-                self.g = 'и'
+        self.assign_cases()
+
+    def assign_cases(self):
+        if self.nom_end == 'а':
+            self.plural = 'ы'
+            self.g[0].append('ы')
+            if self.nom_stem[-1] not in vowels and self.nom_stem[-2] not in vowels:
+                # if a noun ends in a double consonant it is common to add an extra letter in the genitive plural
+                # ex тарелка would be тарелк, but instead it's тарелок for ease of pronunciation
+                # this is true for -a and -o nouns, whose genitive plurals are formed by removing the last letter,
+                # and for -я nouns, whose genitive plural is formed by replacing the я with a soft sign
+                if self.nom_stem[-2] in olist:
+                    self.g_stem = self.nom_stem.rstrip(self.nom_stem[-1]) + 'е' + self.nom_stem[-1]
+                else:
+                    self.g_stem = self.nom_stem.rstrip(self.nom_stem[-1]) + 'о' + self.nom_stem[-1]
+                self.g[1][0] = self.g_stem
+            self.g[1].append('')
+            if self.nom_stem[-1] in olist:
+                self.i[0].append('ей')
             else:
-                self.g = 'ы'
-            if noun.index(-2) in olist:
-                self.i = 'ей'
+                self.i[0].append('ой')
+            self.i[1].append('ами')
+            self.a[0].append('y')
+            self.p[0].append('e')
+            self.p[1].append('ах')
+            self.d[0].append('e')
+            self.d[1].append('ам')
+
+        elif self.nom_end == 'я':
+            self.plural = 'и'
+            self.a[0].append('ю')
+            if self.nom_stem[-1] == 'и':
+                self.p[0].append('и')
+                self.d[0].append('и')
             else:
-                self.i = 'ой'
-            self.a = 'y'
-            self.p = 'e'
-            self.d = 'e'
-        elif noun[-1] == 'я':
-            if noun.index(-2) in ylist:
-                self.a = 'у'
+                self.p[0].append('e')
+                self.d[0].append('e')
+            self.g[0].append('и')
+            if self.nom_stem[-1] in vowels:
+                self.g[1].append('й')
             else:
-                self.a = 'ю'
-            if noun.index(-2) == 'и':
-                self.p = 'и'
-                self.d = 'и'
+                if self.nom_stem[-1] not in vowels and self.nom_stem[-2] not in vowels:
+                    if self.nom_stem[-1] in olist:
+                        self.g_stem = self.nom_stem.rstrip(self.nom_stem[-1]) + 'е' + self.nom_stem[-1]
+                    else:
+                        self.g_stem = self.nom_stem.rstrip(self.nom_stem[-1]) + 'о' + self.nom_stem[-1]
+                    self.g[1][0] = self.g_stem
+                self.g[1].append('ь')
+            self.i[0].append('ей')
+            self.p[1].append('ях')
+            self.d[1].append('ям')
+            self.i[1].append('ями')
+
+        elif self.nom_end == '':
+            self.plural = 'ы'
+            self.a[0].append('a')
+            self.g[0].append('a')
+            if self.nom_end == 'ж' or self.nom_end == 'ч' or self.nom_end == 'ш' or self.nom_end == 'щ':
+                self.g[1].append('ев')
             else:
-                self.p = 'e'
-                self.d = 'e'
-            self.g = 'и'
-            self.i = 'ей'
-        elif noun[-1] != 'а' and noun[-1] != 'я' and noun[-1] != 'й' \
-                and noun[-1] != 'ь' and noun[-1] != 'о' and noun[-1] != 'е':
-            self.a = 'a'
-            self.g = 'a'
-            self.p = 'e'
-            self.d = 'y'
-            self.i = 'ом'
-        elif noun[-1] == 'й':
-            self.a = 'я'
-            self.g = 'я'
-            self.p = 'e'
-            self.d = 'ю'
-            self.i = 'ем'
-        elif noun[-1] == 'ь':
+                self.g[1].append('ов')
+            self.p[0].append('e')
+            self.p[1].append('ах')
+            self.d[0].append('y')
+            self.d[1].append('ам')
+            self.i[0].append('ом')
+            self.i[1].append('ами')
+
+        elif self.nom_end == 'й':
+            self.plural = 'и'
+            self.a[0].append('я')
+            self.g[0].append('я')
+            self.g[1].append('ев')
+            self.p[0].append('e')
+            self.p[1].append('ях')
+            self.d[0].append('ю')
+            self.d[1].append('ям')
+            self.i[0].append('ем')
+            self.i[1].append('ями')
+
+        elif self.nom_end == 'ь':
             # this letter (the 'soft sign') can indicate either a masculine or feminine noun.
             # case endings differ based on the noun's gender.
+            self.plural = 'и'
             if self.gender == 'm':
-                self.a = 'я'
-                self.g = 'я'
-                self.p = 'е'
-                if noun[-2] in ylist:
-                    self.d = 'у'
-                else:
-                    self.d = 'ю'
-                self.i = 'ем'
+                self.g[0].append('я')
+                self.a[0].append('я')
+                self.p[0].append('е')
+                self.d[0].append('ю')
+                self.i[0].append('ем')
             elif self.gender == 'f':
-                self.a = noun[-1]
-                self.g = 'и'
-                self.p = 'e'
-                self.d = 'и'
-                self.i = 'ью'
-        elif noun[-1] == 'о':
-            self.a = noun[-1]
-            self.g = 'а'
-            self.p = 'е'
-            self.d = 'у'
-            self.i = 'ом'
-        elif noun[-1] == 'е':
-            self.a = noun[-1]
-            self.g = 'я'
-            if noun[-2] == 'и':
-                self.p = 'и'
+                self.a[0].append(self.nom_end)
+                self.g[0].append('и')
+                self.p[0].append('e')
+                self.d[0].append('и')
+                self.i[0].append('ью')
+            self.g[1].append('ей')
+            self.p[1].append('ях')
+            self.d[1].append('ям')
+            self.i[1].append('ями')
+
+        elif self.nom_end == 'о':
+            self.plural = 'а'
+            self.a[0].append(self.nom_end)
+            self.g[0].append('а')
+            if self.nom_stem[-1] not in vowels and self.nom_stem[-2] not in vowels:
+                self.g_stem = self.nom_stem.rstrip(self.nom_stem[-1]) + 'о' + self.nom_stem[-1]
+                self.g[1][0] = self.g_stem
+            self.g[1].append('')
+            self.p[0].append('е')
+            self.p[1].append('ах')
+            self.d[0].append('у')
+            self.d[1].append('ам')
+            self.i[0].append('ом')
+            self.i[1].append('ами')
+
+        elif self.nom_end == 'е':
+            self.plural = 'я'
+            self.a[0].append(self.nom_end)
+            self.g[0].append('я')
+            if self.nom_stem[-1] == 'и':
+                self.p[0].append('и')
+                self.g[1].append('й')
             else:
-                self.p = 'е'
-            if noun[-2] in ylist:
-                self.d = 'у'
-            else:
-                self.d = 'ю'
-            self.i = 'ем'
-        if self.gender == 'm' and self.animate is False:
-            self.a = noun[-1]
+                self.p[0].append('е')
+                self.g[1].append('ей')
+            self.d[0].append('ю')
+            self.i[0].append('ем')
+            self.p[1].append('ях')
+            self.d[1].append('ям')
+            self.i[1].append('ями')
+
+        # some vowels (ы, ю, я, sometimes o) can't follow certain consonants.
+        if self.nom_stem[-1] in ilist:
+            self.plural = self.plural.replace('ы', 'и')
+            self.g[0][1] = self.g[0][1].replace('ы', 'и')
+        if self.nom_stem[-1] in ylist:
+            self.d[0][1] = self.d[0][1].replace('ю', 'у')
+        if self.nom_stem[-1] in alist:
+            self.g[0][1] = self.g[0][1].replace('я', 'а')
+            self.a[0][1] = self.a[0][1].replace('я', 'а')
+            self.p[1][1] = self.p[1][1].replace('я', 'а')
+            self.d[1][1] = self.d[1][1].replace('я', 'а')
+            self.i[1][1] = self.i[1][1].replace('я', 'а')
+
+        if self.animate is True:
+            self.a[1] = self.g[1]
+        else:
+            self.a[1].append(self.plural)
+            if self.gender == 'm':
+                self.a[0][1] = self.nom_end
+
+    def print_cases(self):
+        print(self.noun, 'in all 6 cases:')
+        print('Nominative:', self.noun, self.nom_stem + self.plural, end='  ')
+        print('Genitive:', ''.join(self.g[0]), ''.join(self.g[1]))
+        print('Accusative:', ''.join(self.a[0]), ''.join(self.a[1]), end='  ')
+        print('Prepositional:', ''.join(self.p[0]), ''.join(self.p[1]))
+        print('Dative:', ''.join(self.d[0]), ''.join(self.d[1]), end='  ')
+        print('Instrumental:', ''.join(self.i[0]), ''.join(self.i[1]))
+        print('\n')
 
 class Verb:
 
@@ -118,6 +213,9 @@ class Verb:
         global all_verbs
         all_verbs.append(self)
 
+        self.conjugate()
+
+    def conjugate(self):
         if self.ending == 'ить':
             self.conjugation = 2
         else:
@@ -170,7 +268,7 @@ class Verb:
             if self.ending == 'стать' or self.ending == 'деть' or \
                     self.ending == 'нять' or self.ending == 'ереть':
                 if self.ending == 'нять':
-                    if self.stem[-1] in vowels_list:
+                    if self.stem[-1] in vowels:
                         if self.stem[-1] == 'и':
                             for item in self.conjs:
                                 item.insert(1, 'м')
@@ -231,8 +329,8 @@ class Verb:
                 self.mutStem = self.stem + 'л'
                 return True
             elif lc == 'м' or lc == 'в':
+                self.mutStem = self.stem + 'л'
                 if self.ending == 'ить':
-                    self.mutStem = self.stem + 'л'
                     return True
                 elif self.ending == 'ать':
                     return False
@@ -241,12 +339,14 @@ class Verb:
                     self.mutStem = self.stem.replace('с' + lc, 'щ')
                     return True
                 elif lc == 'т' and self.ending == 'ать':
+                    self.mutStem = self.stem.replace(lc, 'ч')
                     return False
                 else:
                     self.mutStem = self.stem.replace(lc, 'ч')
                     return True
             elif lc == 'д' or lc == 'з' or lc == 'г':
                 if lc == 'г' or lc == 'д' and self.ending == 'ать':
+                    self.mutStem = self.stem.replace(lc, 'ж')
                     return False
                 else:
                     self.mutStem = self.stem.replace(lc, 'ж')
@@ -287,12 +387,13 @@ class Verb:
                 if self.mutStem != None and self.stem in i:
                     correction = ttk.Label(nw,
                         text='This is an instance of consonant mutation. \nIf you need a refresher on how it works, click Learn.')
-            except AttributeError:
-                if self.stem not in i:
+                elif self.mutStem != None and self.mutStem in i and self.find_mutation() is False:
                     correction = ttk.Label(nw,
                         text='This is NOT an instance of consonant mutation. \nIf you need a refresher on how it works, click Learn.')
                 else:
                     correction = ttk.Label(nw, text='Incorrect...')
+            except AttributeError:
+                correction = ttk.Label(nw, text='Incorrect...')
         else:
             correction = ttk.Label(nw, text='Correct!')
             cc += 1
@@ -316,7 +417,7 @@ mw = Tk()
 def mainsetup():
     greeting = ttk.Label(mw, text='Welcome! What would you like to practice?')
     gocm = ttk.Button(mw, text='Consonant Mutation', command=cm)
-    gogc = ttk.Button(mw, text='Genitive Case', command=gcsetup)
+    gogc = ttk.Button(mw, text='Genitive Case', command=gc)
     goac = ttk.Button(mw, text='Accusative Case', command=acsetup)
     gopc = ttk.Button(mw, text='Prepositional Case', command=pcsetup)
     godc = ttk.Button(mw, text='Dative Case', command=dcsetup)
@@ -338,11 +439,43 @@ def cm():
     mw.destroy()
     cmw = Tk()
 
+    # tutorial explaining how to use, user can just close it once they've read it
     tutw = Tk()
-    tut = 'Enter just the conjugation of the verb\naccording to the pronoun in front of it.' \
-          '(Don\'t enter the pronoun, or it won\'t work correctly!\nJust the verb.)'
-    tutw.minsize(290, 50)
-    tutw.maxsize(290, 50)
+    tut = 'Enter just the conjugation of the verb\naccording to the pronoun in front of it\n' \
+          'and press Enter.\n(Don\'t enter the pronoun, or it won\'t\nwork correctly! ' \
+          'Just the verb.)\n\nSome of these conjugations will have\nconsonant mutation, some won\'t.'
+    tut_lbl = ttk.Label(tutw, text=tut)
+    tut_lbl.place(x=5, y=5)
+    tutw.minsize(220, 135)
+    tutw.maxsize(220, 135)
+    tutw.title('Tutorial')
+
+    # in case someone doesn't know the subject yet or needs a refresher,
+    # they can open a window anytime with a concise explanation.
+    # it's probably more useful as a refresher for someone who has already learned it;
+    # i might make it more informative once more of the modes are fully functional.
+    def lcm():
+        lcmw = Tk()
+        learn = 'Consonant Mutation\n\nIn Russian, some consonants "mutate" in certain verb conjugations.\n' \
+                'Most commonly, this happens in -ать verbs (in every conjugation)\nand in -ить and -еть ' \
+                'second conjugation verbs (in the я form only).\nSo, which consonants mutate?'
+        mutants1 = 'п -> пл\nб -> бл\nф -> фл\nв -> вл*\nм -> мл*\nт -> ч*\nк -> ч'
+        mutants2 = 'д -> ж*\nг -> ж*\nз -> ж\nс -> ш\nх -> ш\nст -> щ\nск -> щ'
+        exception = '*Consonants with a star next to them\ndo not mutate in -ать verbs.'
+        learn_lbl = ttk.Label(lcmw, text=learn)
+        m_lbl1 = ttk.Label(lcmw, text=mutants1)
+        m_lbl2 = ttk.Label(lcmw, text=mutants2)
+        exception_lbl = ttk.Label(lcmw, text=exception)
+        learn_lbl.place(x=5,y=5)
+        m_lbl1.place(x=5, y=100)
+        m_lbl2.place(x=70, y=100)
+        exception_lbl.place(x=150, y=120)
+        lcmw.minsize(380,215)
+        lcmw.maxsize(380,215)
+        lcmw.title('Learn consonant mutation')
+
+    lcm_lbl = ttk.Label(cmw, text='Don\'t know consonant mutation?')
+    golcm = ttk.Button(cmw, text='Learn', command=lcm)
 
     inp1 = ttk.Entry(cmw)
     inp2 = ttk.Entry(cmw)
@@ -357,6 +490,7 @@ def cm():
     inp = [inp1, inp2, inp3, inp4, inp5, inp6, inp7, inp8, inp9, inp10]
 
     questions = []
+    # initializing verbs for the questions
 
     # 1st conj, no mutation
     read = Verb('читать', 'чит', 'ать', questions, inp)
@@ -374,10 +508,6 @@ def cm():
     # 2nd conj, mutation
     prepare = Verb('готовить', 'готов', 'ить', questions, inp)
     clean = Verb('чистить', 'чист', 'ить', questions, inp)
-
-    # initializing verbs for the questions
-    lcm_lbl = ttk.Label(cmw, text='Don\'t know consonant mutation?')
-    golcm = ttk.Button(cmw, text='Learn', command=NONE)
 
     global all_verbs
     pronouns = list(pronounsn.keys())
@@ -419,15 +549,16 @@ def cm():
     y1 = 30
     for q in range(10):
         lbl[q].place(x=5, y=y1)
-        inp[q].place(x=80, y=y1)
+        inp[q].place(x=85, y=y1)
         ent[q].place(x=215, y=y1-1)
         cmw.update()
         y1 += 30
 
+    tutw.mainloop()
     cmw.mainloop()
     all_verbs = []
 
-def gcsetup():
+def gc():
     mw.destroy()
     gc = Tk()
     gc.mainloop()
