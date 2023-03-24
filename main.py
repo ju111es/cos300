@@ -18,12 +18,14 @@ vowels = ['а', 'я', 'у', 'ю', 'о', 'е', 'ё', 'и', 'ы']
 
 
 class Noun:
-    def __init__(self, noun, nom_stem, nom_end, gender, animate):
+    def __init__(self, noun, nom_stem, nom_end, gender, animate, qlist, inplist):
         self.noun = noun
         self.gender = gender
         self.animate = animate
         self.nom_stem = nom_stem
         self.nom_end = nom_end
+        self.qlist = qlist
+        self.inplist = inplist
 
         global all_nouns
         all_nouns.append(self)
@@ -33,7 +35,7 @@ class Noun:
         self.p = [[self.nom_stem], [self.nom_stem]]
         self.d = [[self.nom_stem], [self.nom_stem]]
         self.i = [[self.nom_stem], [self.nom_stem]]
-        self.plural = ''
+        self.plural = self.nom_stem
         # letters stand for genitive, accusative, prepositional, dative, and instrumental (cases).
         # nouns have different endings in each case depending on the letter they end in,
         # as well as different plural endings in both the nominative (default) case and others.
@@ -43,7 +45,7 @@ class Noun:
 
     def assign_cases(self):
         if self.nom_end == 'а':
-            self.plural = 'ы'
+            self.plural = self.plural + 'ы'
             self.g[0].append('ы')
             if self.nom_stem[-1] not in vowels and self.nom_stem[-2] not in vowels:
                 # if a noun ends in a double consonant it is common to add an extra letter in the genitive plural
@@ -62,20 +64,20 @@ class Noun:
                 self.i[0].append('ой')
             self.i[1].append('ами')
             self.a[0].append('y')
-            self.p[0].append('e')
+            self.p[0].append('е')
             self.p[1].append('ах')
-            self.d[0].append('e')
+            self.d[0].append('е')
             self.d[1].append('ам')
 
         elif self.nom_end == 'я':
-            self.plural = 'и'
+            self.plural = self.plural + 'и'
             self.a[0].append('ю')
             if self.nom_stem[-1] == 'и':
                 self.p[0].append('и')
                 self.d[0].append('и')
             else:
-                self.p[0].append('e')
-                self.d[0].append('e')
+                self.p[0].append('е')
+                self.d[0].append('е')
             self.g[0].append('и')
             if self.nom_stem[-1] in vowels:
                 self.g[1].append('й')
@@ -93,14 +95,14 @@ class Noun:
             self.i[1].append('ями')
 
         elif self.nom_end == '':
-            self.plural = 'ы'
+            self.plural = self.plural + 'ы'
             self.a[0].append('a')
             self.g[0].append('a')
             if self.nom_end == 'ж' or self.nom_end == 'ч' or self.nom_end == 'ш' or self.nom_end == 'щ':
                 self.g[1].append('ев')
             else:
                 self.g[1].append('ов')
-            self.p[0].append('e')
+            self.p[0].append('е')
             self.p[1].append('ах')
             self.d[0].append('y')
             self.d[1].append('ам')
@@ -108,11 +110,11 @@ class Noun:
             self.i[1].append('ами')
 
         elif self.nom_end == 'й':
-            self.plural = 'и'
+            self.plural = self.plural + 'и'
             self.a[0].append('я')
             self.g[0].append('я')
             self.g[1].append('ев')
-            self.p[0].append('e')
+            self.p[0].append('е')
             self.p[1].append('ях')
             self.d[0].append('ю')
             self.d[1].append('ям')
@@ -122,7 +124,7 @@ class Noun:
         elif self.nom_end == 'ь':
             # this letter (the 'soft sign') can indicate either a masculine or feminine noun.
             # case endings differ based on the noun's gender.
-            self.plural = 'и'
+            self.plural = self.plural + 'и'
             if self.gender == 'm':
                 self.g[0].append('я')
                 self.a[0].append('я')
@@ -132,7 +134,7 @@ class Noun:
             elif self.gender == 'f':
                 self.a[0].append(self.nom_end)
                 self.g[0].append('и')
-                self.p[0].append('e')
+                self.p[0].append('е')
                 self.d[0].append('и')
                 self.i[0].append('ью')
             self.g[1].append('ей')
@@ -141,7 +143,7 @@ class Noun:
             self.i[1].append('ями')
 
         elif self.nom_end == 'о':
-            self.plural = 'а'
+            self.plural = self.plural + 'а'
             self.a[0].append(self.nom_end)
             self.g[0].append('а')
             if self.nom_stem[-1] not in vowels and self.nom_stem[-2] not in vowels:
@@ -156,7 +158,7 @@ class Noun:
             self.i[1].append('ами')
 
         elif self.nom_end == 'е':
-            self.plural = 'я'
+            self.plural = self.plural + 'я'
             self.a[0].append(self.nom_end)
             self.g[0].append('я')
             if self.nom_stem[-1] == 'и':
@@ -187,19 +189,51 @@ class Noun:
         if self.animate is True:
             self.a[1] = self.g[1]
         else:
-            self.a[1].append(self.plural)
+            self.a[1].append(self.plural[-1])
             if self.gender == 'm':
                 self.a[0][1] = self.nom_end
 
     def print_cases(self):
         print(self.noun, 'in all 6 cases:')
-        print('Nominative:', self.noun, self.nom_stem + self.plural, end='  ')
+        print('Nominative:', self.noun, self.plural, end='  ')
         print('Genitive:', ''.join(self.g[0]), ''.join(self.g[1]))
         print('Accusative:', ''.join(self.a[0]), ''.join(self.a[1]), end='  ')
         print('Prepositional:', ''.join(self.p[0]), ''.join(self.p[1]))
         print('Dative:', ''.join(self.d[0]), ''.join(self.d[1]), end='  ')
         print('Instrumental:', ''.join(self.i[0]), ''.join(self.i[1]))
         print('\n')
+
+    def gcase_check(self):
+        form = self.qlist[all_nouns.index(self)]
+        if form == self.plural:
+            a = ''.join(self.g[1])
+        else:
+            a = ''.join(self.g[0])
+        i = self.inplist[all_nouns.index(self)].get()
+
+        nw = Tk()
+        if i != a:
+            nominative = i == self.noun or i == self.plural
+            accusative = i == ''.join(self.a[0]) or i == ''.join(self.a[1])
+            prepositional = i == ''.join(self.p[0]) or i == ''.join(self.p[1])
+            dative = i == ''.join(self.d[0]) or i == ''.join(self.d[1])
+            instrumental = i == ''.join(self.i[0]) or i == ''.join(self.i[1])
+            print(i == ''.join(self.p[0]))
+            print(''.join(self.p[0]))
+            if nominative or accusative or prepositional or dative or instrumental:
+                correction = ttk.Label(nw, text='It looks like you applied the wrong case.'
+                                                '\nIf you need a refresher on the genitive case, click Learn.')
+            elif i == self.nom_stem or i == self.nom_stem + 'ь' and i != self.g[1][1]:
+                correction = ttk.Label(nw, text='Usually o or e is added to a stem ending in a double consonant.'
+                                                '\nIf you need a refresher on the genitive case, click Learn.')
+            else:
+                correction = ttk.Label(nw, text='Incorrect...')
+        else:
+            correction = ttk.Label(nw, text='Correct!')
+        correction.place(x=8, y=8)
+        nw.minsize(350, 50)
+        nw.maxsize(350, 50)
+        nw.mainloop()
 
 class Verb:
 
@@ -360,9 +394,6 @@ class Verb:
     def print_conjs(self):
         print(self.verb, 'conjugation:\n' + str(self.conjs), '\n')
 
-    def print_conjs(self):
-        print(self.verb, 'conjugation:\n' + str(self.conjs), '\n')
-
     def cm_check(self):
 
         # if someone uses the wrong letter, not applying consonant mutation or applying it where they shouldn't,
@@ -381,7 +412,6 @@ class Verb:
         i = self.inplist[all_verbs.index(self)].get()
 
         nw = Tk()
-        cc = 0
         if i != a:
             try:
                 if self.mutStem != None and self.stem in i:
@@ -396,7 +426,6 @@ class Verb:
                 correction = ttk.Label(nw, text='Incorrect...')
         else:
             correction = ttk.Label(nw, text='Correct!')
-            cc += 1
         correction.place(x=8, y=8)
         nw.minsize(290, 50)
         nw.maxsize(290, 50)
@@ -454,6 +483,7 @@ def cm():
     # they can open a window anytime with a concise explanation.
     # it's probably more useful as a refresher for someone who has already learned it;
     # i might make it more informative once more of the modes are fully functional.
+
     def lcm():
         lcmw = Tk()
         learn = 'Consonant Mutation\n\nIn Russian, some consonants "mutate" in certain verb conjugations.\n' \
@@ -560,8 +590,130 @@ def cm():
 
 def gc():
     mw.destroy()
-    gc = Tk()
-    gc.mainloop()
+    gcw = Tk()
+
+    tutw = Tk()
+    tut = 'Enter the genitive form of the given\nnominative noun. There are singular\nand plural nouns given-\n' \
+          'enter the genitive form matching the\ngiven nominative form.'
+    tut_lbl = ttk.Label(tutw, text=tut)
+    tut_lbl.place(x=5, y=5)
+    tutw.minsize(220, 100)
+    tutw.maxsize(220, 100)
+    tutw.title('Tutorial')
+
+    def lgc():
+        lgcw = Tk()
+        learn = 'The genitive case in Russian answers the questions "of what?",\n"whose?", and "what is absent?"' \
+                '(Amounts, possession, and negation).\nSo, how is it applied?'
+        gen1 = 'Nouns ending in -> become:\n' \
+                   'hard consonant -> ADD а \nй -> я \nь (masc) -> я \nа -> ы \nя -> и \nь (fem) -> и \nо -> а \nе -> я'
+        gen2 = 'And, plural:\n' \
+                   'hard consonant -> ADD ов \nй -> ев \nь (either) -> ей \nа -> drop ending* \n(vowel) я -> й\n' \
+                   ' (consonant) я -> ь* \nо -> drop ending* \nие -> ий \nе -> ей\n'
+        exception = '*If a noun\'s stem ends in a double consonant,\nan o or e will be added between' \
+                    'the last\ntwo letters when the ending is dropped.'
+        learn_lbl = ttk.Label(lgcw, text=learn)
+        g_lbl1 = ttk.Label(lgcw, text=gen1)
+        g_lbl2 = ttk.Label(lgcw, text=gen2)
+        exception_lbl = ttk.Label(lgcw, text=exception)
+        learn_lbl.place(x=5,y=5)
+        g_lbl1.place(x=5, y=65)
+        g_lbl2.place(x=170, y=65)
+        exception_lbl.place(x=5, y=225)
+        lgcw.minsize(380,280)
+        lgcw.maxsize(380,280)
+        lgcw.title('Learn genitive case')
+        lgcw.mainloop()
+
+    lgc_lbl = ttk.Label(gcw, text='Don\'t know the genitive case?')
+    golgc = ttk.Button(gcw, text='Learn', command=lgc)
+
+    inp1 = ttk.Entry(gcw)
+    inp2 = ttk.Entry(gcw)
+    inp3 = ttk.Entry(gcw)
+    inp4 = ttk.Entry(gcw)
+    inp5 = ttk.Entry(gcw)
+    inp6 = ttk.Entry(gcw)
+    inp7 = ttk.Entry(gcw)
+    inp8 = ttk.Entry(gcw)
+    inp9 = ttk.Entry(gcw)
+    inp10 = ttk.Entry(gcw)
+    inp = [inp1, inp2, inp3, inp4, inp5, inp6, inp7, inp8, inp9, inp10]
+
+    questions = []
+
+    # -a noun
+    cat = Noun('кошка', 'кошк', 'а', 'f', True, questions, inp)
+    # -я noun ending in vowel
+    snake = Noun('змея', 'зме', 'я', 'f', True, questions, inp)
+    # -я noun ending in consonant
+    kitchen = Noun('кухня', 'кухн', 'я', 'f', False, questions, inp)
+    # - noun (hard consonant ending)
+    train = Noun('поезд', 'поезд', '', 'm', False, questions, inp)
+    # -й noun
+    tea = Noun('чай', 'ча', 'й', 'm', False, questions, inp)
+    # -ь noun, masculine
+    dictionary = Noun('словарь', 'словар', 'ь', 'm', False, questions, inp)
+    # -ь noun, feminine
+    church = Noun('церковь', 'церков', 'ь', 'f', False, questions, inp)
+    # -e noun ending in и
+    room = Noun('помещение', 'помещени', 'е', 'n', False, questions, inp)
+    # -e noun ending in consonant
+    sea = Noun('море', 'мор', 'е', 'n', False, questions, inp)
+    # -o noun
+    apple = Noun('яблоко', 'яблок', 'о', 'n', False, questions, inp)
+
+    global all_nouns
+    for item in all_nouns:
+        item.print_cases()
+
+    for i in range(len(all_nouns)):
+        p = rnd.randint(0,1)
+        if p == 0:
+            questions.append(all_nouns[i].noun)
+        else:
+            questions.append(all_nouns[i].plural)
+
+    ent1 = ttk.Button(gcw, command=all_nouns[0].gcase_check, text='Enter')
+    ent2 = ttk.Button(gcw, command=all_nouns[1].gcase_check, text='Enter')
+    ent3 = ttk.Button(gcw, command=all_nouns[2].gcase_check, text='Enter')
+    ent4 = ttk.Button(gcw, command=all_nouns[3].gcase_check, text='Enter')
+    ent5 = ttk.Button(gcw, command=all_nouns[4].gcase_check, text='Enter')
+    ent6 = ttk.Button(gcw, command=all_nouns[5].gcase_check, text='Enter')
+    ent7 = ttk.Button(gcw, command=all_nouns[6].gcase_check, text='Enter')
+    ent8 = ttk.Button(gcw, command=all_nouns[7].gcase_check, text='Enter')
+    ent9 = ttk.Button(gcw, command=all_nouns[8].gcase_check, text='Enter')
+    ent10 = ttk.Button(gcw, command=all_nouns[9].gcase_check, text='Enter')
+    ent = [ent1, ent2, ent3, ent4, ent5, ent6, ent7, ent8, ent9, ent10]
+
+    lbl1 = ttk.Label(gcw, text=(questions[0] + '\n\n'))
+    lbl2 = ttk.Label(gcw, text=(questions[1] + '\n\n'))
+    lbl3 = ttk.Label(gcw, text=(questions[2] + '\n\n'))
+    lbl4 = ttk.Label(gcw, text=(questions[3] + '\n\n'))
+    lbl5 = ttk.Label(gcw, text=(questions[4] + '\n\n'))
+    lbl6 = ttk.Label(gcw, text=(questions[5] + '\n\n'))
+    lbl7 = ttk.Label(gcw, text=(questions[6] + '\n\n'))
+    lbl8 = ttk.Label(gcw, text=(questions[7] + '\n\n'))
+    lbl9 = ttk.Label(gcw, text=(questions[8] + '\n\n'))
+    lbl10 = ttk.Label(gcw, text=(questions[9] + '\n\n'))
+    lbl = [lbl1, lbl2, lbl3, lbl4, lbl5, lbl6, lbl7, lbl8, lbl9, lbl10]
+
+    lgc_lbl.place(x=5, y=1)
+    golgc.place(x=190, y=1)
+    gcw.minsize(300, 330)
+    gcw.title('Genitive case')
+
+    y1 = 30
+    for q in range(10):
+        lbl[q].place(x=5, y=y1)
+        inp[q].place(x=85, y=y1)
+        ent[q].place(x=215, y=y1 - 1)
+        gcw.update()
+        y1 += 30
+
+    tutw.mainloop()
+    gcw.mainloop()
+    all_nouns = []
 
 def acsetup():
     mw.destroy()
