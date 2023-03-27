@@ -1,6 +1,7 @@
 
 from tkinter import *
 from tkinter import ttk
+from tkinter import messagebox
 import random as rnd
 from idlelib.tooltip import Hovertip as Ht
 
@@ -16,6 +17,33 @@ alist = ylist
 olist = ['ж', 'ч', 'ш', 'щ', 'ц']
 vowels = ['а', 'я', 'у', 'ю', 'о', 'е', 'ё', 'и', 'ы']
 
+def spellcheck(string):
+    ispelling = []
+    for letter in ilist:
+        ispelling.append(letter + 'ы')
+    yspelling = []
+    for letter in ylist:
+        yspelling.append(letter + 'у')
+    aspelling = []
+    for letter in alist:
+        aspelling.append(letter + 'я')
+
+    for item in ispelling:
+        if item in string:
+            return str(item + 'i')
+        else:
+            pass
+    for item in yspelling:
+        if item in string:
+            return str(item + 'y')
+        else:
+            pass
+    for item in aspelling:
+        if item in string:
+            return str(item + 'a')
+        else:
+            pass
+    return False
 
 class Noun:
     def __init__(self, noun, nom_stem, nom_end, gender, animate, qlist, inplist):
@@ -96,8 +124,8 @@ class Noun:
 
         elif self.nom_end == '':
             self.plural = self.plural + 'ы'
-            self.a[0].append('a')
-            self.g[0].append('a')
+            self.a[0].append('а')
+            self.g[0].append('а')
             if self.nom_end == 'ж' or self.nom_end == 'ч' or self.nom_end == 'ш' or self.nom_end == 'щ':
                 self.g[1].append('ев')
             else:
@@ -218,21 +246,63 @@ class Noun:
             prepositional = i == ''.join(self.p[0]) or i == ''.join(self.p[1])
             dative = i == ''.join(self.d[0]) or i == ''.join(self.d[1])
             instrumental = i == ''.join(self.i[0]) or i == ''.join(self.i[1])
-            print(i == ''.join(self.p[0]))
-            print(''.join(self.p[0]))
-            if nominative or accusative or prepositional or dative or instrumental:
+
+            if form == self.plural and i == ''.join(self.g[0]) or form == self.noun and i == ''.join(self.g[1]):
+                correction = ttk.Label(nw, text='Make sure you are applying the genitive form\n'
+                                                'matching the given nominative form.')
+            elif nominative or accusative or prepositional or dative or instrumental:
                 correction = ttk.Label(nw, text='It looks like you applied the wrong case.'
                                                 '\nIf you need a refresher on the genitive case, click Learn.')
             elif i == self.nom_stem or i == self.nom_stem + 'ь' and i != self.g[1][1]:
                 correction = ttk.Label(nw, text='Usually o or e is added to a stem ending in a double consonant.'
                                                 '\nIf you need a refresher on the genitive case, click Learn.')
+            elif spellcheck(i) != False:
+                error = spellcheck(i)
+                spelling_correction = error[1] + ' cannot follow ' + error[0] + '.'
+                correction = ttk.Label(nw, text=spelling_correction)
             else:
                 correction = ttk.Label(nw, text='Incorrect...')
         else:
             correction = ttk.Label(nw, text='Correct!')
         correction.place(x=8, y=8)
-        nw.minsize(350, 50)
-        nw.maxsize(350, 50)
+        nw.geometry('350x50')
+        nw.mainloop()
+
+    def pcase_check(self):
+        form = self.qlist[all_nouns.index(self)]
+        if form == self.plural:
+            a = ''.join(self.p[1])
+        else:
+            a = ''.join(self.p[0])
+        i = self.inplist[all_nouns.index(self)].get()
+
+        nw = Tk()
+        if i != a:
+            nominative = i == self.noun or i == self.plural
+            accusative = i == ''.join(self.a[0]) or i == ''.join(self.a[1])
+            genitive = i == ''.join(self.g[0]) or i == ''.join(self.g[1])
+            dative = i == ''.join(self.d[0]) or i == ''.join(self.d[1])
+            instrumental = i == ''.join(self.i[0]) or i == ''.join(self.i[1])
+
+            if form == self.plural and i == ''.join(self.g[0]) or form == self.noun and i == ''.join(self.g[1]):
+                correction = ttk.Label(nw, text='Make sure you are applying the prepositional form\n'
+                                                'matching the given nominative form.')
+            elif nominative or accusative or genitive or dative or instrumental:
+                correction = ttk.Label(nw, text='It looks like you applied the wrong case.'
+                                                '\nIf you need a refresher on the prepositional case, click Learn.')
+            elif self.nom_end == 'я' or self.nom_end == 'е' and self.nom_stem[-1] == 'и' and i[-1] == 'е':
+                correction = ttk.Label(nw, text='ия and ие become ии, not ие.'
+                                                '\nIf you need a refresher on the prepositional case, click Learn.')
+            elif spellcheck(i) != False:
+                error = spellcheck(i)
+                spelling_correction = error[1] + ' cannot follow ' + error[0] + '.'
+                correction = ttk.Label(nw, text=spelling_correction)
+            else:
+                correction = ttk.Label(nw, text='Incorrect...')
+        else:
+            correction = ttk.Label(nw, text='Correct!')
+        correction.place(x=8, y=8)
+        nw.geometry('350x50')
         nw.mainloop()
 
 class Verb:
@@ -424,11 +494,14 @@ class Verb:
                     correction = ttk.Label(nw, text='Incorrect...')
             except AttributeError:
                 correction = ttk.Label(nw, text='Incorrect...')
+            if spellcheck(i) != False:
+                error = spellcheck(i)
+                spelling_correction = error[1] + ' cannot follow ' + error[0] + '.'
+                correction = ttk.Label(nw, text=spelling_correction)
         else:
             correction = ttk.Label(nw, text='Correct!')
         correction.place(x=8, y=8)
-        nw.minsize(290, 50)
-        nw.maxsize(290, 50)
+        nw.geometry('290x50')
         nw.mainloop()
 
     def present_check(self):
@@ -441,16 +514,18 @@ class VerbPair(Verb):
     def __init__(self, Verb1, Verb2):
         pass
 
-
 mw = Tk()
 def mainsetup():
     greeting = ttk.Label(mw, text='Welcome! What would you like to practice?')
     gocm = ttk.Button(mw, text='Consonant Mutation', command=cm)
     gogc = ttk.Button(mw, text='Genitive Case', command=gc)
     goac = ttk.Button(mw, text='Accusative Case', command=acsetup)
-    gopc = ttk.Button(mw, text='Prepositional Case', command=pcsetup)
+    gopc = ttk.Button(mw, text='Prepositional Case', command=pc)
     godc = ttk.Button(mw, text='Dative Case', command=dcsetup)
     goic = ttk.Button(mw, text='Instrumental Case', command=icsetup)
+
+    tutlbl = ttk.Label(mw, text='Or, go to')
+    gotuts = ttk.Button(mw, text='Tutorials', command=NONE)
 
     gocm.place(x=135,y=50)
     gogc.place(x=20,y=50)
@@ -458,33 +533,17 @@ def mainsetup():
     gopc.place(x=20,y=110)
     godc.place(x=20,y=140)
     goic.place(x=20,y=170)
+    tutlbl.place(x=20,y=212)
+    gotuts.place(x=75,y=210)
     greeting.place(x=20,y=18)
-    mw.minsize(280,210)
-    mw.title('Home')
+    mw.geometry('280x245')
+    mw.title('Русские Упражения')
     mw.mainloop()
 
-def cm():
-    # setting up window
-    mw.destroy()
-    cmw = Tk()
+def tutorial(stringvar):
+    messagebox.showinfo(message=stringvar)
 
-    # tutorial explaining how to use, user can just close it once they've read it
-    tutw = Tk()
-    tut = 'Enter just the conjugation of the verb\naccording to the pronoun in front of it\n' \
-          'and press Enter.\n(Don\'t enter the pronoun, or it won\'t\nwork correctly! ' \
-          'Just the verb.)\n\nSome of these conjugations will have\nconsonant mutation, some won\'t.'
-    tut_lbl = ttk.Label(tutw, text=tut)
-    tut_lbl.place(x=5, y=5)
-    tutw.minsize(220, 135)
-    tutw.maxsize(220, 135)
-    tutw.title('Tutorial')
-
-    # in case someone doesn't know the subject yet or needs a refresher,
-    # they can open a window anytime with a concise explanation.
-    # it's probably more useful as a refresher for someone who has already learned it;
-    # i might make it more informative once more of the modes are fully functional.
-
-    def lcm():
+def lcm():
         lcmw = Tk()
         learn = 'Consonant Mutation\n\nIn Russian, some consonants "mutate" in certain verb conjugations.\n' \
                 'Most commonly, this happens in -ать verbs (in every conjugation)\nand in -ить and -еть ' \
@@ -500,12 +559,23 @@ def cm():
         m_lbl1.place(x=5, y=100)
         m_lbl2.place(x=70, y=100)
         exception_lbl.place(x=150, y=120)
-        lcmw.minsize(380,215)
-        lcmw.maxsize(380,215)
+        lcmw.geometry('380x215')
         lcmw.title('Learn consonant mutation')
+def cm():
+    # setting up window
+    mw.withdraw()
+    cmw = Tk()
 
-    lcm_lbl = ttk.Label(cmw, text='Don\'t know consonant mutation?')
-    golcm = ttk.Button(cmw, text='Learn', command=lcm)
+    # tutorial explaining how to use, user can just close it once they've read it
+    tut = 'Enter just the conjugation of the verb\naccording to the pronoun in front of it\n' \
+          'and press Enter.\n(Don\'t enter the pronoun, or it won\'t\nwork correctly! ' \
+          'Just the verb.)\n\nSome of these conjugations will have\nconsonant mutation, some won\'t.'
+    tutorial(tut)
+
+    # in case someone doesn't know the subject yet or needs a refresher,
+    # they can open a window anytime with a concise explanation.
+    # it's probably more useful as a refresher for someone who has already learned it;
+    # i might make it more informative once more of the modes are fully functional.
 
     inp1 = ttk.Entry(cmw)
     inp2 = ttk.Entry(cmw)
@@ -571,9 +641,20 @@ def cm():
     lbl10 = ttk.Label(cmw, text=(' '.join(questions[9]) + '\n\n'))
     lbl = [lbl1, lbl2, lbl3, lbl4, lbl5, lbl6, lbl7, lbl8, lbl9, lbl10]
 
+    lcm_lbl = ttk.Label(cmw, text='Don\'t know consonant mutation?')
+    golcm = ttk.Button(cmw, text='Learn', command=lcm)
     lcm_lbl.place(x=5, y=1)
     golcm.place(x=190, y=1)
-    cmw.minsize(300, 330)
+
+    def back():
+        cmw.withdraw()
+        mw.deiconify()
+    goback = ttk.Button(cmw, text='Back', command=back)
+    gotuts = ttk.Button(cmw, text='Tutorials', command=NONE)
+    goback.place(x=5, y=330)
+    gotuts.place(x=90, y=330)
+
+    cmw.minsize(300, 360)
     cmw.title('Consonant mutation')
 
     y1 = 30
@@ -584,24 +665,10 @@ def cm():
         cmw.update()
         y1 += 30
 
-    tutw.mainloop()
     cmw.mainloop()
     all_verbs = []
 
-def gc():
-    mw.destroy()
-    gcw = Tk()
-
-    tutw = Tk()
-    tut = 'Enter the genitive form of the given\nnominative noun. There are singular\nand plural nouns given-\n' \
-          'enter the genitive form matching the\ngiven nominative form.'
-    tut_lbl = ttk.Label(tutw, text=tut)
-    tut_lbl.place(x=5, y=5)
-    tutw.minsize(220, 100)
-    tutw.maxsize(220, 100)
-    tutw.title('Tutorial')
-
-    def lgc():
+def lgc():
         lgcw = Tk()
         learn = 'The genitive case in Russian answers the questions "of what?",\n"whose?", and "what is absent?"' \
                 '(Amounts, possession, and negation).\nSo, how is it applied?'
@@ -624,6 +691,14 @@ def gc():
         lgcw.maxsize(380,280)
         lgcw.title('Learn genitive case')
         lgcw.mainloop()
+def gc():
+    mw.destroy()
+    gcw = Tk()
+
+    tut = 'Enter the genitive form of the given\nnominative noun. There are singular\nand plural nouns given-\n' \
+          'enter the genitive form matching the\ngiven nominative form.'
+    tutorial(tut)
+
 
     lgc_lbl = ttk.Label(gcw, text='Don\'t know the genitive case?')
     golgc = ttk.Button(gcw, text='Learn', command=lgc)
@@ -655,7 +730,7 @@ def gc():
     # -ь noun, masculine
     dictionary = Noun('словарь', 'словар', 'ь', 'm', False, questions, inp)
     # -ь noun, feminine
-    church = Noun('церковь', 'церков', 'ь', 'f', False, questions, inp)
+    bear = Noun('медведь', 'медвед', 'ь', 'f', True, questions, inp)
     # -e noun ending in и
     room = Noun('помещение', 'помещени', 'е', 'n', False, questions, inp)
     # -e noun ending in consonant
@@ -664,8 +739,6 @@ def gc():
     apple = Noun('яблоко', 'яблок', 'о', 'n', False, questions, inp)
 
     global all_nouns
-    for item in all_nouns:
-        item.print_cases()
 
     for i in range(len(all_nouns)):
         p = rnd.randint(0,1)
@@ -700,7 +773,7 @@ def gc():
 
     lgc_lbl.place(x=5, y=1)
     golgc.place(x=190, y=1)
-    gcw.minsize(300, 330)
+    gcw.geometry('300x330')
     gcw.title('Genitive case')
 
     y1 = 30
@@ -711,7 +784,6 @@ def gc():
         gcw.update()
         y1 += 30
 
-    tutw.mainloop()
     gcw.mainloop()
     all_nouns = []
 
@@ -720,10 +792,118 @@ def acsetup():
     ac = Tk()
     ac.mainloop()
 
-def pcsetup():
+def lpc():
+        lpcw = Tk()
+        learn = 'The prepositional case in Russian is used to indicate position,\nwith the prepositions ' \
+                'в, на, and о (in/at, on/at, and about).\nSo, how is it applied?'
+        prep1 = 'Nouns ending in -> become:\n' \
+               'hard consonant -> ADD e \nь (fem) -> и \nия -> ии \nие -> ии \nall other nouns -> e'
+        prep2 = 'And, plural:\n' \
+               'hard consonant, a, o -> ах \nall other nouns -> ях'
+        learn_lbl = ttk.Label(lpcw, text=learn)
+        p_lbl1 = ttk.Label(lpcw, text=prep1)
+        p_lbl2 = ttk.Label(lpcw, text=prep2)
+        learn_lbl.place(x=5, y=5)
+        p_lbl1.place(x=5, y=65)
+        p_lbl2.place(x=170, y=65)
+        lpcw.minsize(380, 280)
+        lpcw.maxsize(380, 280)
+        lpcw.title('Learn prepositional case')
+        lpcw.mainloop()
+def pc():
     mw.destroy()
-    pc = Tk()
-    pc.mainloop()
+    pcw = Tk()
+
+    tut = 'Enter the prepositional form of the given\nnominative noun. There are singular\nand plural nouns given-\n' \
+          'enter the prepositional form matching the\ngiven nominative form.'
+    tutorial(tut)
+
+    lpc_lbl = ttk.Label(pcw, text='Don\'t know the prepositional case?')
+    golpc = ttk.Button(pcw, text='Learn', command=lpc)
+
+    inp1 = ttk.Entry(pcw)
+    inp2 = ttk.Entry(pcw)
+    inp3 = ttk.Entry(pcw)
+    inp4 = ttk.Entry(pcw)
+    inp5 = ttk.Entry(pcw)
+    inp6 = ttk.Entry(pcw)
+    inp7 = ttk.Entry(pcw)
+    inp8 = ttk.Entry(pcw)
+    inp9 = ttk.Entry(pcw)
+    inp10 = ttk.Entry(pcw)
+    inp = [inp1, inp2, inp3, inp4, inp5, inp6, inp7, inp8, inp9, inp10]
+
+    questions = []
+
+    # -a noun
+    street = Noun('улица', 'улиц', 'а', 'f', False, questions, inp)
+    # -ия noun
+    station = Noun('станция', 'станци', 'я', 'f', False, questions, inp)
+    # -я noun
+    family = Noun('семья', 'семь', 'я', 'f', True, questions, inp)
+    # - noun (hard consonant ending)
+    store = Noun('магазин', 'магазин', '', 'm', False, questions, inp)
+    # -й noun
+    museum = Noun('музей', 'музе', 'й', 'm', False, questions, inp)
+    # -ь noun, masculine
+    dictionary = Noun('словарь', 'словар', 'ь', 'm', False, questions, inp)
+    # -ь noun, feminine
+    church = Noun('церковь', 'церков', 'ь', 'f', False, questions, inp)
+    # -e noun ending in и
+    building = Noun('здание', 'здани', 'е', 'n', False, questions, inp)
+    # -e noun ending in consonant
+    sun = Noun('солнце', 'солнц', 'е', 'n', False, questions, inp)
+    # -o noun
+    place = Noun('место', 'мест', 'о', 'n', False, questions, inp)
+
+    global all_nouns
+
+    for i in range(len(all_nouns)):
+        p = rnd.randint(0, 1)
+        if p == 0:
+            questions.append(all_nouns[i].noun)
+        else:
+            questions.append(all_nouns[i].plural)
+
+    ent1 = ttk.Button(pcw, command=all_nouns[0].pcase_check, text='Enter')
+    ent2 = ttk.Button(pcw, command=all_nouns[1].pcase_check, text='Enter')
+    ent3 = ttk.Button(pcw, command=all_nouns[2].pcase_check, text='Enter')
+    ent4 = ttk.Button(pcw, command=all_nouns[3].pcase_check, text='Enter')
+    ent5 = ttk.Button(pcw, command=all_nouns[4].pcase_check, text='Enter')
+    ent6 = ttk.Button(pcw, command=all_nouns[5].pcase_check, text='Enter')
+    ent7 = ttk.Button(pcw, command=all_nouns[6].pcase_check, text='Enter')
+    ent8 = ttk.Button(pcw, command=all_nouns[7].pcase_check, text='Enter')
+    ent9 = ttk.Button(pcw, command=all_nouns[8].pcase_check, text='Enter')
+    ent10 = ttk.Button(pcw, command=all_nouns[9].pcase_check, text='Enter')
+    ent = [ent1, ent2, ent3, ent4, ent5, ent6, ent7, ent8, ent9, ent10]
+
+    lbl1 = ttk.Label(pcw, text=(questions[0] + '\n\n'))
+    lbl2 = ttk.Label(pcw, text=(questions[1] + '\n\n'))
+    lbl3 = ttk.Label(pcw, text=(questions[2] + '\n\n'))
+    lbl4 = ttk.Label(pcw, text=(questions[3] + '\n\n'))
+    lbl5 = ttk.Label(pcw, text=(questions[4] + '\n\n'))
+    lbl6 = ttk.Label(pcw, text=(questions[5] + '\n\n'))
+    lbl7 = ttk.Label(pcw, text=(questions[6] + '\n\n'))
+    lbl8 = ttk.Label(pcw, text=(questions[7] + '\n\n'))
+    lbl9 = ttk.Label(pcw, text=(questions[8] + '\n\n'))
+    lbl10 = ttk.Label(pcw, text=(questions[9] + '\n\n'))
+    lbl = [lbl1, lbl2, lbl3, lbl4, lbl5, lbl6, lbl7, lbl8, lbl9, lbl10]
+
+    lpc_lbl.place(x=5, y=1)
+    golpc.place(x=195, y=1)
+    pcw.geometry('300x330')
+    pcw.title('Prepositional case')
+
+    y1 = 30
+    for q in range(10):
+        lbl[q].place(x=5, y=y1)
+        inp[q].place(x=85, y=y1)
+        ent[q].place(x=215, y=y1 - 1)
+        pcw.update()
+        y1 += 30
+
+    pcw.mainloop()
+    all_nouns = []
 
 def dcsetup():
     mw.destroy()
@@ -735,6 +915,8 @@ def icsetup():
     ic = Tk()
     ic.mainloop()
 
-# Press the green button in the gutter to run the script.
+def pt():
+    pass
+
 if __name__ == '__main__':
     mainsetup()
