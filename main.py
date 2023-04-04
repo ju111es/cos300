@@ -340,6 +340,10 @@ class Verb:
         # it isn't accounting for those which are in an unexpected conjugation group either, but it will be!
 
         if self.conjugation == 1:
+
+            print(self.ending == 'ать')
+            print(self.find_mutation())
+
             if self.find_mutation() is True:
                 for item in self.conjs:
                     item.append(self.mutStem)
@@ -359,7 +363,7 @@ class Verb:
             elif self.ending == 'ыть':
                 for item in self.conjs:
                     item.append('о')
-            if self.i[-1][-1] in ylist:
+            if len(self.i[-1]) > 0 and self.i[-1][-1] in ylist:
                 self.i.append('у')
                 self.they.append('ут')
             else:
@@ -410,54 +414,70 @@ class Verb:
             self.he.append('ит')
             self.we.append('им')
             self.you_p.append('ите')
-            if self.i[-1][-1] in ylist:
+            if len(self.i[-1]) > 0 and self.i[-1][-1] in ylist:
                 self.i.append('у')
             else:
                 self.i.append('ю')
-            if self.they[-1][-1] in alist:
+            if len(self.they[-1]) > 0 and self.they[-1][-1] in alist:
                 self.they.append('ат')
             else:
                 self.they.append('ят')
 
         for item in self.conjs:
-            self.conjs[self.conjs.index(item)] = ''.join(item)
+            item = ''.join(item)
+
+        # past tense is formed based on the gender of the subject (masc, fem, neu, or plural).
+        self.past_stem = list(self.verb)
+        self.past_stem.pop(-1)
+        self.past_stem.pop(-2)
+        self.past_stem = ''.join(self.past_stem)
+        self.mpast = self.past_stem + 'л'
+        self.fpast = self.past_stem + 'ла'
+        self.npast = self.past_stem + 'ло'
+        self.ppast = self.past_stem + 'ли'
 
     def find_mutation(self):
         # some consonants 'mutate' in certain verb conjugations. this function predicts when they will.
 
         mutants = ['п', 'б', 'ф', 'м', 'в', 'к', 'т', 'д', 'з', 'г', 'с', 'х']
-        lc = self.stem[-1]  # last consonant
-        if self.ending == 'ать' or self.ending == 'ить' and lc in mutants:
-            # grouping consonants which mutate the same way
-            if lc == 'п' or lc == 'б' or lc == 'ф':
-                self.mutStem = self.stem + 'л'
-                return True
-            elif lc == 'м' or lc == 'в':
-                self.mutStem = self.stem + 'л'
-                if self.ending == 'ить':
+        if len(self.stem) > 0:
+            lc = self.stem[-1]  # last consonant
+        else:
+            return False
+        if self.ending == 'ать' or self.ending == 'ить':
+            if lc in mutants:
+                # grouping consonants which mutate the same way
+                if lc == 'п' or lc == 'б' or lc == 'ф':
+                    self.mutStem = self.stem + 'л'
                     return True
-                elif self.ending == 'ать':
-                    return False
-            elif lc == 'к' or lc == 'т':
-                if self.stem[-2] == 'с':
-                    self.mutStem = self.stem.replace('с' + lc, 'щ')
+                elif lc == 'м' or lc == 'в':
+                    self.mutStem = self.stem + 'л'
+                    if self.ending == 'ить':
+                        return True
+                    elif self.ending == 'ать':
+                        return False
+                elif lc == 'к' or lc == 'т':
+                    if self.stem[-2] == 'с':
+                        self.mutStem = self.stem.replace('с' + lc, 'щ')
+                        return True
+                    elif lc == 'т' and self.ending == 'ать':
+                        self.mutStem = self.stem.replace(lc, 'ч')
+                        return False
+                    else:
+                        self.mutStem = self.stem.replace(lc, 'ч')
+                        return True
+                elif lc == 'д' or lc == 'з' or lc == 'г':
+                    if lc == 'г' or lc == 'д' and self.ending == 'ать':
+                        self.mutStem = self.stem.replace(lc, 'ж')
+                        return False
+                    else:
+                        self.mutStem = self.stem.replace(lc, 'ж')
+                        return True
+                elif lc == 'с' or lc == 'х':
+                    self.mutStem = self.stem.replace(lc, 'ш')
                     return True
-                elif lc == 'т' and self.ending == 'ать':
-                    self.mutStem = self.stem.replace(lc, 'ч')
-                    return False
-                else:
-                    self.mutStem = self.stem.replace(lc, 'ч')
-                    return True
-            elif lc == 'д' or lc == 'з' or lc == 'г':
-                if lc == 'г' or lc == 'д' and self.ending == 'ать':
-                    self.mutStem = self.stem.replace(lc, 'ж')
-                    return False
-                else:
-                    self.mutStem = self.stem.replace(lc, 'ж')
-                    return True
-            elif lc == 'с' or lc == 'х':
-                self.mutStem = self.stem.replace(lc, 'ш')
-                return True
+            else:
+                return False
         else:
             return False
 
@@ -483,21 +503,28 @@ class Verb:
 
         nw = Tk()
         if i != a:
-            try:
-                if self.mutStem != None and self.stem in i:
-                    correction = ttk.Label(nw,
-                        text='This is an instance of consonant mutation. \nIf you need a refresher on how it works, click Learn.')
-                elif self.mutStem != None and self.mutStem in i and self.find_mutation() is False:
-                    correction = ttk.Label(nw,
-                        text='This is NOT an instance of consonant mutation. \nIf you need a refresher on how it works, click Learn.')
+            if hasattr(self, 'mutStem') and self.stem in i:
+                correction = ttk.Label(nw, text='This is an instance of consonant mutation. '
+                                                '\nIf you need a refresher on how it works, click Learn.')
+            elif hasattr(self, 'mutStem') and self.mutStem in i and self.find_mutation() is False:
+                    correction = ttk.Label(nw, text='This is NOT an instance of consonant mutation. '
+                                                    '\nIf you need a refresher on how it works, click Learn.')
+            elif self.present_check == 'wrong pronoun' or self.present_check() == 'past tense' \
+                    or self.present_check() == 'prnoun entered':
+                if self.present_check == 'wrong pronoun':
+                    correction = ttk.Label(nw, text='It looks like you used the wrong conjugation. \nIf you'
+                                                    'need a refresher on present tense conjugation, go to Lessons.')
+                elif self.present_check() == 'past tense':
+                    correction = ttk.Label(nw, text='Consonant mutation only occurs in present tense.'
+                                                    '\nIf you need a refresher on how it works, click Learn.')
                 else:
-                    correction = ttk.Label(nw, text='Incorrect...')
-            except AttributeError:
-                correction = ttk.Label(nw, text='Incorrect...')
-            if spellcheck(i) != False:
+                    correction = ttk.Label(nw, text='Please enter just the verb, not the pronoun.')
+            elif spellcheck(i) != False:
                 error = spellcheck(i)
                 spelling_correction = error[1] + ' cannot follow ' + error[0] + '.'
                 correction = ttk.Label(nw, text=spelling_correction)
+            else:
+                correction = ttk.Label(nw, text='Incorrect...')
         else:
             correction = ttk.Label(nw, text='Correct!')
         correction.place(x=8, y=8)
@@ -505,7 +532,60 @@ class Verb:
         nw.mainloop()
 
     def present_check(self):
-        pass
+        pronoun = self.qlist[all_verbs.index(self)][0]
+        pronouns = list(pronounsn.keys())
+        pronouns.pop(pronouns.index('она'))
+        pronouns.pop(pronouns.index('оно'))
+        if pronoun == 'она' or pronoun == 'оно':
+            pronoun_index = pronouns.index('он')
+        else:
+            pronoun_index = pronouns.index(pronoun)
+        a = self.conjs[pronoun_index]
+
+        i = self.inplist[all_verbs.index(self)].get()
+
+        nw = Tk()
+        if i != a:
+            wrong_i = a == ''.join(self.i) and i == self.conjs[1] or i == self.conjs[2] or i == self.conjs[3] \
+                or i == self.conjs[4] or i == self.conjs[5]
+            wrong_you = a == ''.join(self.you) and i == self.conjs[0] or i == self.conjs[2] or i == self.conjs[3] \
+                or i == self.conjs[4] or i == self.conjs[5]
+            wrong_he = a == ''.join(self.he) and i == self.conjs[0] or i == self.conjs[1] or i == self.conjs[3] \
+                or i == self.conjs[4] or i == self.conjs[5]
+            wrong_we = a == ''.join(self.we) and i == self.conjs[0] or i == self.conjs[1] or i == self.conjs[2] \
+                or i == self.conjs[4] or i == self.conjs[5]
+            wrong_youp = a == ''.join(self.you_p) and i == self.conjs[0] or i == self.conjs[1] or i == self.conjs[2] \
+                or i == self.conjs[3] or i == self.conjs[5]
+            wrong_they = a == ''.join(self.they) and i == self.conjs[0] or i == self.conjs[1] or i == self.conjs[2] \
+                or i == self.conjs[3] or i == self.conjs[4]
+            print(self.conjs[0])
+            print(self.i)
+            print(''.join(self.i))
+
+            pronoun_entered = False
+            for item in list(pronounsn.keys()):
+                if (item + ' ') in i:
+                    pronoun_entered = True
+                else:
+                    pass
+
+            if wrong_i or wrong_you or wrong_he or wrong_we or wrong_youp or wrong_they:
+                correction = ttk.Label(nw, text='It looks like you used the wrong conjugation.\n'
+                                                'If you need a refresher on present tense conjugation, click Learn.')
+                return 'wrong pronoun'
+            elif i == self.mpast or i == self.fpast or i == self.npast or i == self.ppast:
+                correction = ttk.Label(nw, text='Remember, this is present tense practice!')
+                return 'past tense'
+            elif pronoun_entered:
+                correction = ttk.Label(nw, text='Please enter just the verb, not the pronoun.')
+                return 'pronoun entered'
+            else:
+                correction = ttk.Label(nw, text='Incorrect...')
+        else:
+            correction = ttk.Label(nw, text='Correct!')
+        correction.place(x=8, y=8)
+        nw.geometry('290x50')
+        nw.mainloop()
 
     def past_check(self):
         pass
@@ -517,31 +597,90 @@ class VerbPair(Verb):
 mw = Tk()
 def mainsetup():
     greeting = ttk.Label(mw, text='Welcome! What would you like to practice?')
-    gocm = ttk.Button(mw, text='Consonant Mutation', command=cm)
+
     gogc = ttk.Button(mw, text='Genitive Case', command=gc)
     goac = ttk.Button(mw, text='Accusative Case', command=acsetup)
     gopc = ttk.Button(mw, text='Prepositional Case', command=pc)
     godc = ttk.Button(mw, text='Dative Case', command=dcsetup)
     goic = ttk.Button(mw, text='Instrumental Case', command=icsetup)
+    gocm = ttk.Button(mw, text='Consonant Mutation', command=cm)
+    gopt = ttk.Button(mw, text='Present Tense', command=pt)
 
     tutlbl = ttk.Label(mw, text='Or, go to')
-    gotuts = ttk.Button(mw, text='Tutorials', command=NONE)
+    gotuts = ttk.Button(mw, text='Lessons', command=lessons)
 
-    gocm.place(x=135,y=50)
+    greeting.place(x=20, y=18)
+
     gogc.place(x=20,y=50)
     goac.place(x=20,y=80)
     gopc.place(x=20,y=110)
     godc.place(x=20,y=140)
     goic.place(x=20,y=170)
+    gocm.place(x=135,y=50)
+    gopt.place(x=135,y=80)
+
     tutlbl.place(x=20,y=212)
     gotuts.place(x=75,y=210)
-    greeting.place(x=20,y=18)
+
     mw.geometry('280x245')
     mw.title('Русские Упражения')
     mw.mainloop()
 
 def tutorial(stringvar):
     messagebox.showinfo(message=stringvar)
+
+def lessons():
+    mw.withdraw()
+    lw = Tk()
+
+    greeting = ttk.Label(lw, text='Welcome! What would you like to learn?')
+
+    def golgc():
+        lw.withdraw()
+        lgc()
+    lgc_button = ttk.Button(lw, text='Genitive case', command=golgc)
+    def golac():
+        lw.withdraw()
+        lac()
+    lac_button = ttk.Button(lw, text='Accusative case', command=golac)
+    def golpc():
+        lw.withdraw()
+        lpc()
+    lpc_button = ttk.Button(lw, text='Prepositional case', command=golpc)
+    def goldc():
+        lw.withdraw()
+        ldc()
+    ldc_button = ttk.Button(lw, text='Dative case', command=goldc)
+    def golic():
+        lw.withdraw()
+        lic()
+    lic_button = ttk.Button(lw, text='Instrumental case', command=golic)
+
+    def golcm():
+        lw.withdraw()
+        lcm()
+    lcm_button = ttk.Button(lw, text='Consonant mutation', command=golcm)
+    def golpresent():
+        lw.withdraw()
+        lpt()
+    lpresent_button = ttk.Button(lw, text='Present tense', command=golpresent)
+
+    def home():
+        lw.withdraw()
+        mw.deiconify()
+    gohome = ttk.Button(lw, text='Home', command=home)
+
+    lgc_button.place(x=20, y=50)
+    lac_button.place(x=20, y=80)
+    lpc_button.place(x=20, y=110)
+    ldc_button.place(x=20, y=140)
+    lic_button.place(x=20, y=170)
+    lcm_button.place(x=135, y=50)
+    lpresent_button.place(x=135,y=80)
+    gohome.place(x=20, y=210)
+    greeting.place(x=20, y=18)
+    lw.geometry('280x245')
+    lw.title('Русские Уроки')
 
 def lcm():
         lcmw = Tk()
@@ -551,26 +690,38 @@ def lcm():
         mutants1 = 'п -> пл\nб -> бл\nф -> фл\nв -> вл*\nм -> мл*\nт -> ч*\nк -> ч'
         mutants2 = 'д -> ж*\nг -> ж*\nз -> ж\nс -> ш\nх -> ш\nст -> щ\nск -> щ'
         exception = '*Consonants with a star next to them\ndo not mutate in -ать verbs.'
+
         learn_lbl = ttk.Label(lcmw, text=learn)
         m_lbl1 = ttk.Label(lcmw, text=mutants1)
         m_lbl2 = ttk.Label(lcmw, text=mutants2)
         exception_lbl = ttk.Label(lcmw, text=exception)
+
+        def gocm():
+            lcmw.withdraw()
+            cm()
+        cm_button = ttk.Button(lcmw, text='Practice consonant mutation', command=gocm)
+        golessons = ttk.Button(lcmw, text='All lessons', command=lessons)
+        cm_button.place(x=5,y=215)
+        golessons.place(x=170,y=215)
+
         learn_lbl.place(x=5,y=5)
         m_lbl1.place(x=5, y=100)
         m_lbl2.place(x=70, y=100)
         exception_lbl.place(x=150, y=120)
-        lcmw.geometry('380x215')
+        lcmw.geometry('380x245')
         lcmw.title('Learn consonant mutation')
 def cm():
-    # setting up window
+    # get rid of main window
     mw.withdraw()
-    cmw = Tk()
 
     # tutorial explaining how to use, user can just close it once they've read it
-    tut = 'Enter just the conjugation of the verb\naccording to the pronoun in front of it\n' \
-          'and press Enter.\n(Don\'t enter the pronoun, or it won\'t\nwork correctly! ' \
-          'Just the verb.)\n\nSome of these conjugations will have\nconsonant mutation, some won\'t.'
+    tut = 'Enter just the present tense conjugation of the verb according to the pronoun in front of it' \
+          'and press Enter. (Don\'t enter the pronoun, or it won\'t work correctly! ' \
+          'Just the verb.)\n\nSome of these conjugations will have consonant mutation, some won\'t.'
     tutorial(tut)
+
+    # set up new window
+    cmw = Tk()
 
     # in case someone doesn't know the subject yet or needs a refresher,
     # they can open a window anytime with a concise explanation.
@@ -646,15 +797,16 @@ def cm():
     lcm_lbl.place(x=5, y=1)
     golcm.place(x=190, y=1)
 
-    def back():
+    # to get to the home page or tutorials page
+    def home():
         cmw.withdraw()
         mw.deiconify()
-    goback = ttk.Button(cmw, text='Back', command=back)
-    gotuts = ttk.Button(cmw, text='Tutorials', command=NONE)
-    goback.place(x=5, y=330)
+    gohome = ttk.Button(cmw, text='Home', command=home)
+    gotuts = ttk.Button(cmw, text='Tutorials', command=lessons)
+    gohome.place(x=5, y=330)
     gotuts.place(x=90, y=330)
 
-    cmw.minsize(300, 360)
+    cmw.geometry('300x360')
     cmw.title('Consonant mutation')
 
     y1 = 30
@@ -679,26 +831,34 @@ def lgc():
                    ' (consonant) я -> ь* \nо -> drop ending* \nие -> ий \nе -> ей\n'
         exception = '*If a noun\'s stem ends in a double consonant,\nan o or e will be added between' \
                     'the last\ntwo letters when the ending is dropped.'
+
         learn_lbl = ttk.Label(lgcw, text=learn)
         g_lbl1 = ttk.Label(lgcw, text=gen1)
         g_lbl2 = ttk.Label(lgcw, text=gen2)
         exception_lbl = ttk.Label(lgcw, text=exception)
+
+        def gogc():
+            lgcw.withdraw()
+            gc()
+        gc_button = ttk.Button(lgcw, text='Practice genitive case', command=gogc)
+        golessons = ttk.Button(lgcw, text='All lessons', command=lessons)
+        gc_button.place(x=5, y=280)
+        golessons.place(x=130, y=280)
+
         learn_lbl.place(x=5,y=5)
         g_lbl1.place(x=5, y=65)
         g_lbl2.place(x=170, y=65)
         exception_lbl.place(x=5, y=225)
-        lgcw.minsize(380,280)
-        lgcw.maxsize(380,280)
+        lgcw.geometry('380x310')
         lgcw.title('Learn genitive case')
         lgcw.mainloop()
 def gc():
-    mw.destroy()
+    mw.withdraw()
     gcw = Tk()
 
-    tut = 'Enter the genitive form of the given\nnominative noun. There are singular\nand plural nouns given-\n' \
-          'enter the genitive form matching the\ngiven nominative form.'
+    tut = 'Enter the genitive form of the given nominative noun. There are singular and plural nouns given- ' \
+          'enter the genitive form matching the given nominative form.'
     tutorial(tut)
-
 
     lgc_lbl = ttk.Label(gcw, text='Don\'t know the genitive case?')
     golgc = ttk.Button(gcw, text='Learn', command=lgc)
@@ -773,7 +933,16 @@ def gc():
 
     lgc_lbl.place(x=5, y=1)
     golgc.place(x=190, y=1)
-    gcw.geometry('300x330')
+
+    def home():
+        gcw.withdraw()
+        mw.deiconify()
+    gohome = ttk.Button(gcw, text='Home', command=home)
+    gotuts = ttk.Button(gcw, text='Tutorials', command=lessons)
+    gohome.place(x=5, y=330)
+    gotuts.place(x=90, y=330)
+
+    gcw.geometry('300x360')
     gcw.title('Genitive case')
 
     y1 = 30
@@ -787,6 +956,8 @@ def gc():
     gcw.mainloop()
     all_nouns = []
 
+def lac():
+    pass
 def acsetup():
     mw.destroy()
     ac = Tk()
@@ -800,22 +971,31 @@ def lpc():
                'hard consonant -> ADD e \nь (fem) -> и \nия -> ии \nие -> ии \nall other nouns -> e'
         prep2 = 'And, plural:\n' \
                'hard consonant, a, o -> ах \nall other nouns -> ях'
+
         learn_lbl = ttk.Label(lpcw, text=learn)
         p_lbl1 = ttk.Label(lpcw, text=prep1)
         p_lbl2 = ttk.Label(lpcw, text=prep2)
+
+        def gopc():
+            lpcw.withdraw()
+            pc()
+        pc_button = ttk.Button(lpcw, text='Practice prepositional case', command=gopc)
+        golessons = ttk.Button(lpcw, text='All lessons', command=lessons)
+        pc_button.place(x=5, y=160)
+        golessons.place(x=160, y=160)
+
         learn_lbl.place(x=5, y=5)
         p_lbl1.place(x=5, y=65)
         p_lbl2.place(x=170, y=65)
-        lpcw.minsize(380, 280)
-        lpcw.maxsize(380, 280)
+        lpcw.geometry('380x190')
         lpcw.title('Learn prepositional case')
         lpcw.mainloop()
 def pc():
     mw.destroy()
     pcw = Tk()
 
-    tut = 'Enter the prepositional form of the given\nnominative noun. There are singular\nand plural nouns given-\n' \
-          'enter the prepositional form matching the\ngiven nominative form.'
+    tut = 'Enter the prepositional form of the given nominative noun. There are singular and plural nouns given- ' \
+          'enter the prepositional form matching the given nominative form.'
     tutorial(tut)
 
     lpc_lbl = ttk.Label(pcw, text='Don\'t know the prepositional case?')
@@ -891,7 +1071,16 @@ def pc():
 
     lpc_lbl.place(x=5, y=1)
     golpc.place(x=195, y=1)
-    pcw.geometry('300x330')
+
+    def home():
+        pcw.withdraw()
+        mw.deiconify()
+    gohome = ttk.Button(pcw, text='Home', command=home)
+    gotuts = ttk.Button(pcw, text='Tutorials', command=lessons)
+    gohome.place(x=5, y=330)
+    gotuts.place(x=90, y=330)
+
+    pcw.geometry('300x360')
     pcw.title('Prepositional case')
 
     y1 = 30
@@ -905,18 +1094,129 @@ def pc():
     pcw.mainloop()
     all_nouns = []
 
+def ldc():
+    pass
 def dcsetup():
     mw.destroy()
     dc = Tk()
     dc.mainloop()
 
+def lic():
+    pass
 def icsetup():
     mw.destroy()
     ic = Tk()
     ic.mainloop()
 
-def pt():
+def lpt():
     pass
+def pt():
+    mw.withdraw()
+
+    tut = 'Enter just the present tense conjugation of the verb according to the pronoun in front of it' \
+          'and press Enter. (Don\'t enter the pronoun, or it won\'t work correctly! ' \
+          'Just the verb.)\n\nNone of these conjugations will undergo consonant mutation- ' \
+          'this mode is just for present tense practice!'
+    tutorial(tut)
+
+    ptw = Tk()
+
+    inp1 = ttk.Entry(ptw)
+    inp2 = ttk.Entry(ptw)
+    inp3 = ttk.Entry(ptw)
+    inp4 = ttk.Entry(ptw)
+    inp5 = ttk.Entry(ptw)
+    inp6 = ttk.Entry(ptw)
+    inp7 = ttk.Entry(ptw)
+    inp8 = ttk.Entry(ptw)
+    inp9 = ttk.Entry(ptw)
+    inp10 = ttk.Entry(ptw)
+    inp11 = ttk.Entry(ptw)
+    inp12 = ttk.Entry(ptw)
+    inp = [inp1, inp2, inp3, inp4, inp5, inp6, inp7, inp8, inp9, inp10, inp11, inp12]
+
+    questions = []
+
+    # 1st conj
+    do = Verb('делать', 'дел', 'ать', questions, inp)
+    stroll = Verb('гулять', 'гул', 'ять', questions, inp)
+    have = Verb('иметь', 'им', 'еть', questions, inp)
+    split = Verb('колоть', 'кол', 'оть', questions, inp)
+
+    # 2nd conj
+    phone = Verb('звонить', 'звон', 'ить', questions, inp)
+
+    # special 1st conj
+    give = Verb('давать', 'д', 'авать', questions, inp)
+    dance = Verb('танцевать', 'танц', 'евать', questions, inp)
+    wash = Verb('мыть', 'м', 'ыть', questions, inp)
+    become = Verb('стать', '', 'стать', questions, inp)
+    put_on = Verb('надеть', 'на', 'деть', questions, inp)
+    accept = Verb('принять', 'при', 'нять', questions, inp)
+    die = Verb('умереть', 'ум', 'ереть', questions, inp)
+
+    global all_verbs
+    pronouns = list(pronounsn.keys())
+    for a in range(len(all_verbs)):
+        q = []
+        q.append(pronouns[rnd.randint(0, len(pronouns) - 1)])
+        q.append(all_verbs[a].verb)
+        questions.append(q)
+
+    ent1 = ttk.Button(ptw, command=all_verbs[0].present_check, text='Enter')
+    ent2 = ttk.Button(ptw, command=all_verbs[1].present_check, text='Enter')
+    ent3 = ttk.Button(ptw, command=all_verbs[2].present_check, text='Enter')
+    ent4 = ttk.Button(ptw, command=all_verbs[3].present_check, text='Enter')
+    ent5 = ttk.Button(ptw, command=all_verbs[4].present_check, text='Enter')
+    ent6 = ttk.Button(ptw, command=all_verbs[5].present_check, text='Enter')
+    ent7 = ttk.Button(ptw, command=all_verbs[6].present_check, text='Enter')
+    ent8 = ttk.Button(ptw, command=all_verbs[7].present_check, text='Enter')
+    ent9 = ttk.Button(ptw, command=all_verbs[8].present_check, text='Enter')
+    ent10 = ttk.Button(ptw, command=all_verbs[9].present_check, text='Enter')
+    ent11 = ttk.Button(ptw, command=all_verbs[10].present_check, text='Enter')
+    ent12 = ttk.Button(ptw, command=all_verbs[11].present_check, text='Enter')
+    ent = [ent1, ent2, ent3, ent4, ent5, ent6, ent7, ent8, ent9, ent10, ent11, ent12]
+
+    lbl1 = ttk.Label(ptw, text=(' '.join(questions[0]) + '\n\n'))
+    lbl2 = ttk.Label(ptw, text=(' '.join(questions[1]) + '\n\n'))
+    lbl3 = ttk.Label(ptw, text=(' '.join(questions[2]) + '\n\n'))
+    lbl4 = ttk.Label(ptw, text=(' '.join(questions[3]) + '\n\n'))
+    lbl5 = ttk.Label(ptw, text=(' '.join(questions[4]) + '\n\n'))
+    lbl6 = ttk.Label(ptw, text=(' '.join(questions[5]) + '\n\n'))
+    lbl7 = ttk.Label(ptw, text=(' '.join(questions[6]) + '\n\n'))
+    lbl8 = ttk.Label(ptw, text=(' '.join(questions[7]) + '\n\n'))
+    lbl9 = ttk.Label(ptw, text=(' '.join(questions[8]) + '\n\n'))
+    lbl10 = ttk.Label(ptw, text=(' '.join(questions[9]) + '\n\n'))
+    lbl11 = ttk.Label(ptw, text=(' '.join(questions[10]) + '\n\n'))
+    lbl12 = ttk.Label(ptw, text=(' '.join(questions[11]) + '\n\n'))
+    lbl = [lbl1, lbl2, lbl3, lbl4, lbl5, lbl6, lbl7, lbl8, lbl9, lbl10, lbl11, lbl12]
+
+    lcm_lbl = ttk.Label(ptw, text='Don\'t know consonant mutation?')
+    golcm = ttk.Button(ptw, text='Learn', command=lcm)
+    lcm_lbl.place(x=5, y=1)
+    golcm.place(x=190, y=1)
+
+    def home():
+        ptw.withdraw()
+        mw.deiconify()
+    gohome = ttk.Button(ptw, text='Home', command=home)
+    gotuts = ttk.Button(ptw, text='Tutorials', command=lessons)
+    gohome.place(x=5, y=390)
+    gotuts.place(x=90, y=390)
+
+    ptw.geometry('300x420')
+    ptw.title('Present tense')
+
+    y1 = 30
+    for q in range(12):
+        lbl[q].place(x=5, y=y1)
+        inp[q].place(x=85, y=y1)
+        ent[q].place(x=215, y=y1 - 1)
+        ptw.update()
+        y1 += 30
+
+    ptw.mainloop()
+    all_verbs = []
 
 if __name__ == '__main__':
     mainsetup()
