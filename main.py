@@ -341,9 +341,6 @@ class Verb:
 
         if self.conjugation == 1:
 
-            print(self.ending == 'ать')
-            print(self.find_mutation())
-
             if self.find_mutation() is True:
                 for item in self.conjs:
                     item.append(self.mutStem)
@@ -424,12 +421,12 @@ class Verb:
                 self.they.append('ят')
 
         for item in self.conjs:
-            item = ''.join(item)
+            self.conjs[self.conjs.index(item)] = ''.join(item)
 
         # past tense is formed based on the gender of the subject (masc, fem, neu, or plural).
         self.past_stem = list(self.verb)
         self.past_stem.pop(-1)
-        self.past_stem.pop(-2)
+        self.past_stem.pop(-1)
         self.past_stem = ''.join(self.past_stem)
         self.mpast = self.past_stem + 'л'
         self.fpast = self.past_stem + 'ла'
@@ -502,23 +499,17 @@ class Verb:
         i = self.inplist[all_verbs.index(self)].get()
 
         nw = Tk()
+        nw.withdraw()
         if i != a:
-            if hasattr(self, 'mutStem') and self.stem in i:
+            if self.find_mutation() is True and self.stem in i:
                 correction = ttk.Label(nw, text='This is an instance of consonant mutation. '
                                                 '\nIf you need a refresher on how it works, click Learn.')
             elif hasattr(self, 'mutStem') and self.mutStem in i and self.find_mutation() is False:
-                    correction = ttk.Label(nw, text='This is NOT an instance of consonant mutation. '
-                                                    '\nIf you need a refresher on how it works, click Learn.')
-            elif self.present_check == 'wrong pronoun' or self.present_check() == 'past tense' \
-                    or self.present_check() == 'prnoun entered':
-                if self.present_check == 'wrong pronoun':
-                    correction = ttk.Label(nw, text='It looks like you used the wrong conjugation. \nIf you'
-                                                    'need a refresher on present tense conjugation, go to Lessons.')
-                elif self.present_check() == 'past tense':
-                    correction = ttk.Label(nw, text='Consonant mutation only occurs in present tense.'
-                                                    '\nIf you need a refresher on how it works, click Learn.')
-                else:
-                    correction = ttk.Label(nw, text='Please enter just the verb, not the pronoun.')
+                correction = ttk.Label(nw, text='This is NOT an instance of consonant mutation. '
+                                                '\nIf you need a refresher on how it works, click Learn.')
+            elif self.present_check() == 'wrong pronoun' or self.present_check() == 'past tense' \
+                    or self.present_check() == 'pronoun entered':
+                pass
             elif spellcheck(i) != False:
                 error = spellcheck(i)
                 spelling_correction = error[1] + ' cannot follow ' + error[0] + '.'
@@ -527,6 +518,7 @@ class Verb:
                 correction = ttk.Label(nw, text='Incorrect...')
         else:
             correction = ttk.Label(nw, text='Correct!')
+        nw.deiconify()
         correction.place(x=8, y=8)
         nw.geometry('290x50')
         nw.mainloop()
@@ -558,9 +550,8 @@ class Verb:
                 or i == self.conjs[3] or i == self.conjs[5]
             wrong_they = a == ''.join(self.they) and i == self.conjs[0] or i == self.conjs[1] or i == self.conjs[2] \
                 or i == self.conjs[3] or i == self.conjs[4]
-            print(self.conjs[0])
-            print(self.i)
-            print(''.join(self.i))
+
+            past = i == self.mpast or i == self.fpast or i == self.npast or i == self.ppast
 
             pronoun_entered = False
             for item in list(pronounsn.keys()):
@@ -571,13 +562,26 @@ class Verb:
 
             if wrong_i or wrong_you or wrong_he or wrong_we or wrong_youp or wrong_they:
                 correction = ttk.Label(nw, text='It looks like you used the wrong conjugation.\n'
-                                                'If you need a refresher on present tense conjugation, click Learn.')
+                                                'If you need a refresher on present tense conjugation, \nclick Learn.')
+                correction.place(x=8, y=8)
+                nw.geometry('295x65')
+                nw.mainloop()
                 return 'wrong pronoun'
-            elif i == self.mpast or i == self.fpast or i == self.npast or i == self.ppast:
-                correction = ttk.Label(nw, text='Remember, this is present tense practice!')
+            elif past:
+                if mode == 'cm':
+                    correction = ttk.Label(nw, text='Consonant mutation only occurs in present tense.'
+                                                    '\nIf you need a refresher on how it works, click Learn.')
+                else:
+                    correction = ttk.Label(nw, text='Remember, this is present tense practice!')
+                correction.place(x=8, y=8)
+                nw.geometry('290x50')
+                nw.mainloop()
                 return 'past tense'
             elif pronoun_entered:
                 correction = ttk.Label(nw, text='Please enter just the verb, not the pronoun.')
+                correction.place(x=8, y=8)
+                nw.geometry('290x50')
+                nw.mainloop()
                 return 'pronoun entered'
             else:
                 correction = ttk.Label(nw, text='Incorrect...')
@@ -682,6 +686,9 @@ def lessons():
     lw.geometry('280x245')
     lw.title('Русские Уроки')
 
+mode = None
+# the mode will be relevant when checking answers
+
 def lcm():
         lcmw = Tk()
         learn = 'Consonant Mutation\n\nIn Russian, some consonants "mutate" in certain verb conjugations.\n' \
@@ -711,8 +718,13 @@ def lcm():
         lcmw.geometry('380x245')
         lcmw.title('Learn consonant mutation')
 def cm():
+    global mode
+    mode = 'cm'
+
     # get rid of main window
     mw.withdraw()
+    # set up new window
+    cmw = Tk()
 
     # tutorial explaining how to use, user can just close it once they've read it
     tut = 'Enter just the present tense conjugation of the verb according to the pronoun in front of it' \
@@ -720,8 +732,7 @@ def cm():
           'Just the verb.)\n\nSome of these conjugations will have consonant mutation, some won\'t.'
     tutorial(tut)
 
-    # set up new window
-    cmw = Tk()
+
 
     # in case someone doesn't know the subject yet or needs a refresher,
     # they can open a window anytime with a concise explanation.
@@ -853,6 +864,9 @@ def lgc():
         lgcw.title('Learn genitive case')
         lgcw.mainloop()
 def gc():
+    global mode
+    mode = 'gc'
+
     mw.withdraw()
     gcw = Tk()
 
@@ -991,6 +1005,9 @@ def lpc():
         lpcw.title('Learn prepositional case')
         lpcw.mainloop()
 def pc():
+    global mode
+    mode = 'pc'
+
     mw.destroy()
     pcw = Tk()
 
@@ -1111,6 +1128,9 @@ def icsetup():
 def lpt():
     pass
 def pt():
+    global mode
+    mode = 'pt'
+
     mw.withdraw()
 
     tut = 'Enter just the present tense conjugation of the verb according to the pronoun in front of it' \
