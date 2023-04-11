@@ -63,6 +63,7 @@ class Noun:
         self.p = [[self.nom_stem], [self.nom_stem]]
         self.d = [[self.nom_stem], [self.nom_stem]]
         self.i = [[self.nom_stem], [self.nom_stem]]
+        self.cases = [self.g, self.a, self.p, self.d, self.i]
         self.plural = self.nom_stem
         # letters stand for genitive, accusative, prepositional, dative, and instrumental (cases).
         # nouns have different endings in each case depending on the letter they end in,
@@ -221,6 +222,12 @@ class Noun:
             if self.gender == 'm':
                 self.a[0][1] = self.nom_end
 
+        self.g[0] = ''.join(self.g[0]); self.g[1] = ''.join(self.g[1])
+        self.a[0] = ''.join(self.a[0]); self.a[1] = ''.join(self.a[1])
+        self.p[0] = ''.join(self.p[0]); self.p[1] = ''.join(self.p[1])
+        self.d[0] = ''.join(self.d[0]); self.d[1] = ''.join(self.d[1])
+        self.i[0] = ''.join(self.i[0]); self.i[1] = ''.join(self.i[1])
+
     def print_cases(self):
         print(self.noun, 'in all 6 cases:')
         print('Nominative:', self.noun, self.plural, end='  ')
@@ -231,79 +238,88 @@ class Noun:
         print('Instrumental:', ''.join(self.i[0]), ''.join(self.i[1]))
         print('\n')
 
-    def gcase_check(self):
+    def case_check(self):
         form = self.qlist[all_nouns.index(self)]
         if form == self.plural:
-            a = ''.join(self.g[1])
+            if mode == 'genitive':
+                a = ''.join(self.g[1])
+            elif mode == 'accusative':
+                a = ''.join(self.a[1])
+            elif mode == 'prepositional':
+                a = ''.join(self.p[1])
+            elif mode == 'dative':
+                a = ''.join(self.d[1])
+            else:
+                a = ''.join(self.i[1])
         else:
-            a = ''.join(self.g[0])
+            if mode == 'genitive':
+                a = ''.join(self.g[0])
+            elif mode == 'accusative':
+                a = ''.join(self.a[0])
+            elif mode == 'prepositional':
+                a = ''.join(self.p[0])
+            elif mode == 'dative':
+                a = ''.join(self.d[0])
+            else:
+                a = ''.join(self.i[0])
         i = self.inplist[all_nouns.index(self)].get()
 
         nw = Tk()
+        correction = ''
         if i != a:
             nominative = i == self.noun or i == self.plural
-            accusative = i == ''.join(self.a[0]) or i == ''.join(self.a[1])
-            prepositional = i == ''.join(self.p[0]) or i == ''.join(self.p[1])
-            dative = i == ''.join(self.d[0]) or i == ''.join(self.d[1])
-            instrumental = i == ''.join(self.i[0]) or i == ''.join(self.i[1])
+            genitive = a not in self.g and i in self.g
+            accusative = a not in self.a and i in self.a
+            prepositional = a not in self.p and i in self.p
+            dative = a not in self.d and i in self.d
+            instrumental = a not in self.i and i in self.i
+            print(i in self.p)
 
-            if form == self.plural and i == ''.join(self.g[0]) or form == self.noun and i == ''.join(self.g[1]):
-                correction = ttk.Label(nw, text='Make sure you are applying the genitive form\n'
-                                                'matching the given nominative form.')
-            elif nominative or accusative or prepositional or dative or instrumental:
-                correction = ttk.Label(nw, text='It looks like you applied the wrong case.'
-                                                '\nIf you need a refresher on the genitive case, click Learn.')
-            elif i == self.nom_stem or i == self.nom_stem + 'ь' and i != self.g[1][1]:
-                correction = ttk.Label(nw, text='Usually o or e is added to a stem ending in a double consonant.'
-                                                '\nIf you need a refresher on the genitive case, click Learn.')
+            wrong_plurality = False
+            if form == self.plural:
+                for item in self.cases:
+                    if i == item[0]:
+                        wrong_plurality = True
+            else:
+                for item in self.cases:
+                    if i == item[1]:
+                        wrong_plurality = True
+
+            if nominative or genitive or accusative or prepositional or dative or instrumental:
+                correction = 'It looks like you applied the wrong case.' \
+                             '\nIf you need a refresher on the ' + str(mode) + ' case, click Learn.'
+            elif wrong_plurality:
+                correction = 'Make sure you are applying the ' + str(mode) + ' form \nmatching the given nominative form.'
+                nw.update()
             elif spellcheck(i) != False:
                 error = spellcheck(i)
-                spelling_correction = error[1] + ' cannot follow ' + error[0] + '.'
-                correction = ttk.Label(nw, text=spelling_correction)
+                correction = error[1] + ' cannot follow ' + error[0] + '.'
             else:
-                correction = ttk.Label(nw, text='Incorrect...')
+                pass
+            if mode == 'genitive':
+                if i == self.nom_stem or i == self.nom_stem + 'ь' and i != self.g[1][1]:
+                    correction = 'Usually o or e is added to a stem ending in a double consonant.' \
+                                 '\nIf you need a refresher on the genitive case, click Learn.'
+            elif mode == 'accusative':
+                if self.gender == 'm' and self.animate is False and i in self.g:
+                    correction = 'Inanimate masculine nouns do not change in the accusative case,' \
+                                 '\nand all inanimate nouns use the nominative plural in the accusative.' \
+                                 '\nIf you need a refresher on the accusative case, click Learn.'
+            elif mode == 'prepositional':
+                if self.nom_end == 'я' or self.nom_end == 'е' and self.nom_stem[-1] == 'и' and i[-1] == 'е':
+                    correction = 'ия and ие become ии, not ие.' \
+                                 '\nIf you need a refresher on the prepositional case, click Learn.'
+            elif mode == 'dative':
+                pass
+            elif mode == 'instrumental':
+                pass
+            if correction == '':
+                correction = 'Incorrect...'
         else:
-            correction = ttk.Label(nw, text='Correct!')
-        correction.place(x=8, y=8)
-        nw.geometry('350x50')
-        nw.mainloop()
-
-    def pcase_check(self):
-        form = self.qlist[all_nouns.index(self)]
-        if form == self.plural:
-            a = ''.join(self.p[1])
-        else:
-            a = ''.join(self.p[0])
-        i = self.inplist[all_nouns.index(self)].get()
-
-        nw = Tk()
-        if i != a:
-            nominative = i == self.noun or i == self.plural
-            accusative = i == ''.join(self.a[0]) or i == ''.join(self.a[1])
-            genitive = i == ''.join(self.g[0]) or i == ''.join(self.g[1])
-            dative = i == ''.join(self.d[0]) or i == ''.join(self.d[1])
-            instrumental = i == ''.join(self.i[0]) or i == ''.join(self.i[1])
-
-            if form == self.plural and i == ''.join(self.g[0]) or form == self.noun and i == ''.join(self.g[1]):
-                correction = ttk.Label(nw, text='Make sure you are applying the prepositional form\n'
-                                                'matching the given nominative form.')
-            elif nominative or accusative or genitive or dative or instrumental:
-                correction = ttk.Label(nw, text='It looks like you applied the wrong case.'
-                                                '\nIf you need a refresher on the prepositional case, click Learn.')
-            elif self.nom_end == 'я' or self.nom_end == 'е' and self.nom_stem[-1] == 'и' and i[-1] == 'е':
-                correction = ttk.Label(nw, text='ия and ие become ии, not ие.'
-                                                '\nIf you need a refresher on the prepositional case, click Learn.')
-            elif spellcheck(i) != False:
-                error = spellcheck(i)
-                spelling_correction = error[1] + ' cannot follow ' + error[0] + '.'
-                correction = ttk.Label(nw, text=spelling_correction)
-            else:
-                correction = ttk.Label(nw, text='Incorrect...')
-        else:
-            correction = ttk.Label(nw, text='Correct!')
-        correction.place(x=8, y=8)
-        nw.geometry('350x50')
-        nw.mainloop()
+            correction = 'Correct!'
+        correction_label = ttk.Label(nw, text=correction)
+        correction_label.place(x=8, y=8)
+        nw.geometry('350x65')
 
 class Verb:
 
@@ -509,7 +525,7 @@ class Verb:
                                                 '\nIf you need a refresher on how it works, click Learn.')
             elif self.present_check() == 'wrong pronoun' or self.present_check() == 'past tense' \
                     or self.present_check() == 'pronoun entered':
-                pass
+                return
             elif spellcheck(i) != False:
                 error = spellcheck(i)
                 spelling_correction = error[1] + ' cannot follow ' + error[0] + '.'
@@ -594,10 +610,6 @@ class Verb:
     def past_check(self):
         pass
 
-class VerbPair(Verb):
-    def __init__(self, Verb1, Verb2):
-        pass
-
 mw = Tk()
 def mainsetup():
     greeting = ttk.Label(mw, text='Welcome! What would you like to practice?')
@@ -630,8 +642,8 @@ def mainsetup():
     mw.title('Русские Упражения')
     mw.mainloop()
 
-def tutorial(stringvar):
-    messagebox.showinfo(message=stringvar)
+def tutorial(string):
+    messagebox.showinfo(message=string)
 
 def lessons():
     mw.withdraw()
@@ -687,11 +699,11 @@ def lessons():
     lw.title('Русские Уроки')
 
 mode = None
-# the mode will be relevant when checking answers
+# the mode will be relevant when checking answers, mostly in case practice
 
 def lcm():
         lcmw = Tk()
-        learn = 'Consonant Mutation\n\nIn Russian, some consonants "mutate" in certain verb conjugations.\n' \
+        learn = 'In Russian, some consonants "mutate" in certain verb conjugations.\n' \
                 'Most commonly, this happens in -ать verbs (in every conjugation)\nand in -ить and -еть ' \
                 'second conjugation verbs (in the я form only).\nSo, which consonants mutate?'
         mutants1 = 'п -> пл\nб -> бл\nф -> фл\nв -> вл*\nм -> мл*\nт -> ч*\nк -> ч'
@@ -708,23 +720,21 @@ def lcm():
             cm()
         cm_button = ttk.Button(lcmw, text='Practice consonant mutation', command=gocm)
         golessons = ttk.Button(lcmw, text='All lessons', command=lessons)
-        cm_button.place(x=5,y=215)
-        golessons.place(x=170,y=215)
+        cm_button.place(x=5,y=185)
+        golessons.place(x=170,y=185)
 
         learn_lbl.place(x=5,y=5)
-        m_lbl1.place(x=5, y=100)
-        m_lbl2.place(x=70, y=100)
-        exception_lbl.place(x=150, y=120)
-        lcmw.geometry('380x245')
+        m_lbl1.place(x=5, y=70)
+        m_lbl2.place(x=70, y=70)
+        exception_lbl.place(x=150, y=90)
+        lcmw.geometry('380x215')
         lcmw.title('Learn consonant mutation')
 def cm():
     global mode
-    mode = 'cm'
+    mode = 'consonant mutation'
 
     # get rid of main window
     mw.withdraw()
-    # set up new window
-    cmw = Tk()
 
     # tutorial explaining how to use, user can just close it once they've read it
     tut = 'Enter just the present tense conjugation of the verb according to the pronoun in front of it' \
@@ -732,7 +742,8 @@ def cm():
           'Just the verb.)\n\nSome of these conjugations will have consonant mutation, some won\'t.'
     tutorial(tut)
 
-
+    # set up new window
+    cmw = Tk()
 
     # in case someone doesn't know the subject yet or needs a refresher,
     # they can open a window anytime with a concise explanation.
@@ -865,14 +876,15 @@ def lgc():
         lgcw.mainloop()
 def gc():
     global mode
-    mode = 'gc'
+    mode = 'genitive'
 
     mw.withdraw()
-    gcw = Tk()
 
     tut = 'Enter the genitive form of the given nominative noun. There are singular and plural nouns given- ' \
           'enter the genitive form matching the given nominative form.'
     tutorial(tut)
+
+    gcw = Tk()
 
     lgc_lbl = ttk.Label(gcw, text='Don\'t know the genitive case?')
     golgc = ttk.Button(gcw, text='Learn', command=lgc)
@@ -921,16 +933,16 @@ def gc():
         else:
             questions.append(all_nouns[i].plural)
 
-    ent1 = ttk.Button(gcw, command=all_nouns[0].gcase_check, text='Enter')
-    ent2 = ttk.Button(gcw, command=all_nouns[1].gcase_check, text='Enter')
-    ent3 = ttk.Button(gcw, command=all_nouns[2].gcase_check, text='Enter')
-    ent4 = ttk.Button(gcw, command=all_nouns[3].gcase_check, text='Enter')
-    ent5 = ttk.Button(gcw, command=all_nouns[4].gcase_check, text='Enter')
-    ent6 = ttk.Button(gcw, command=all_nouns[5].gcase_check, text='Enter')
-    ent7 = ttk.Button(gcw, command=all_nouns[6].gcase_check, text='Enter')
-    ent8 = ttk.Button(gcw, command=all_nouns[7].gcase_check, text='Enter')
-    ent9 = ttk.Button(gcw, command=all_nouns[8].gcase_check, text='Enter')
-    ent10 = ttk.Button(gcw, command=all_nouns[9].gcase_check, text='Enter')
+    ent1 = ttk.Button(gcw, command=all_nouns[0].case_check, text='Enter')
+    ent2 = ttk.Button(gcw, command=all_nouns[1].case_check, text='Enter')
+    ent3 = ttk.Button(gcw, command=all_nouns[2].case_check, text='Enter')
+    ent4 = ttk.Button(gcw, command=all_nouns[3].case_check, text='Enter')
+    ent5 = ttk.Button(gcw, command=all_nouns[4].case_check, text='Enter')
+    ent6 = ttk.Button(gcw, command=all_nouns[5].case_check, text='Enter')
+    ent7 = ttk.Button(gcw, command=all_nouns[6].case_check, text='Enter')
+    ent8 = ttk.Button(gcw, command=all_nouns[7].case_check, text='Enter')
+    ent9 = ttk.Button(gcw, command=all_nouns[8].case_check, text='Enter')
+    ent10 = ttk.Button(gcw, command=all_nouns[9].case_check, text='Enter')
     ent = [ent1, ent2, ent3, ent4, ent5, ent6, ent7, ent8, ent9, ent10]
 
     lbl1 = ttk.Label(gcw, text=(questions[0] + '\n\n'))
@@ -1006,14 +1018,15 @@ def lpc():
         lpcw.mainloop()
 def pc():
     global mode
-    mode = 'pc'
+    mode = 'prepositional'
 
     mw.destroy()
-    pcw = Tk()
 
     tut = 'Enter the prepositional form of the given nominative noun. There are singular and plural nouns given- ' \
           'enter the prepositional form matching the given nominative form.'
     tutorial(tut)
+
+    pcw = Tk()
 
     lpc_lbl = ttk.Label(pcw, text='Don\'t know the prepositional case?')
     golpc = ttk.Button(pcw, text='Learn', command=lpc)
@@ -1062,16 +1075,16 @@ def pc():
         else:
             questions.append(all_nouns[i].plural)
 
-    ent1 = ttk.Button(pcw, command=all_nouns[0].pcase_check, text='Enter')
-    ent2 = ttk.Button(pcw, command=all_nouns[1].pcase_check, text='Enter')
-    ent3 = ttk.Button(pcw, command=all_nouns[2].pcase_check, text='Enter')
-    ent4 = ttk.Button(pcw, command=all_nouns[3].pcase_check, text='Enter')
-    ent5 = ttk.Button(pcw, command=all_nouns[4].pcase_check, text='Enter')
-    ent6 = ttk.Button(pcw, command=all_nouns[5].pcase_check, text='Enter')
-    ent7 = ttk.Button(pcw, command=all_nouns[6].pcase_check, text='Enter')
-    ent8 = ttk.Button(pcw, command=all_nouns[7].pcase_check, text='Enter')
-    ent9 = ttk.Button(pcw, command=all_nouns[8].pcase_check, text='Enter')
-    ent10 = ttk.Button(pcw, command=all_nouns[9].pcase_check, text='Enter')
+    ent1 = ttk.Button(pcw, command=all_nouns[0].case_check, text='Enter')
+    ent2 = ttk.Button(pcw, command=all_nouns[1].case_check, text='Enter')
+    ent3 = ttk.Button(pcw, command=all_nouns[2].case_check, text='Enter')
+    ent4 = ttk.Button(pcw, command=all_nouns[3].case_check, text='Enter')
+    ent5 = ttk.Button(pcw, command=all_nouns[4].case_check, text='Enter')
+    ent6 = ttk.Button(pcw, command=all_nouns[5].case_check, text='Enter')
+    ent7 = ttk.Button(pcw, command=all_nouns[6].case_check, text='Enter')
+    ent8 = ttk.Button(pcw, command=all_nouns[7].case_check, text='Enter')
+    ent9 = ttk.Button(pcw, command=all_nouns[8].case_check, text='Enter')
+    ent10 = ttk.Button(pcw, command=all_nouns[9].case_check, text='Enter')
     ent = [ent1, ent2, ent3, ent4, ent5, ent6, ent7, ent8, ent9, ent10]
 
     lbl1 = ttk.Label(pcw, text=(questions[0] + '\n\n'))
@@ -1126,10 +1139,61 @@ def icsetup():
     ic.mainloop()
 
 def lpt():
-    pass
+    lptw = Tk()
+    learn1 = 'Verbs are conjugated in many different ways in the present tense.\n' \
+            'First, there are two conjugation groups:'
+    firstconj1 = '1st conjugation: \nя -> ___ю \nты -> ___ешь \nон -> ___ет'
+    firstconj2 = '\nмы -> ___ем \nвы -> ___ете \nони -> ___ют'
+    secondconj1 = '2nd conjugation: \nя -> ___ю \nты -> ___ишь \nон -> ___ит'
+    secondconj2 = '\nмы -> ___им \nвы -> ___ите \nони -> ___ят'
+    learn2 = 'Most verbs with the ending -ить are in the second conjugation, while most verbs ' \
+                          'with ending -ать and -еть are in the first. There are some exceptions, but they ' \
+                          'won\'t be included in this exercise. Otherwise, all verbs are in the first conjugation. ' \
+                          'Verbs with different endings change differently from their infinitive to conjugated form.'
+
+    keep_vowel = 'Some verbs keep the vowel in their ending: \n-ать \n-ять \n-еть'
+    keep_vowel_ex = '\nчитать -> читаю \nгулять -> гуляю \nсметь -> смеет'
+
+    mut_vowel = 'While others having mutating vowels: \n-авать \n-овать \n-евать \n-ыть'
+    mut_vowel_ex = '\nдавать -> даю \nцеловать -> целую \nтанцевать -> танцую \nоткрыть -> открою'
+
+    drop_vowel = 'Some drop the vowel: \n-ить \n-оть \nать* \n*after consonant mutation'
+    drop_vowel_ex = '\nговорить -> говорю \nколоть -> колю \nплакать -> плачу'
+
+    mut_n = 'Some mutate their last consonant to н: \n-стать \n-деть \nThese use у rather than ю in я & они forms.'
+    mut_n_ex = '\nвстать -> встану \nнадеть -> надену'
+
+    nyat = 'Then, theres -нять verbs... \n-инять -> -им \n-[other vowel]нять -> -[other vowel]йм ' \
+           '\n-[consonant]нять -> -[consonant]ним \nLike н verbs, these use у instead of ю.'
+    nyat_ex = '\nпринять -> прмму \nпонять -> пойму \nподнять -> подниму'
+
+    eret = 'And finally, -ереть: \n-ереть -> р \nWhich also uses у.'
+    eret_ex = '\nтереть -> тру'
+
+    learn_lbl = ttk.Label(lptw, text=learn1)
+    f_lbl1 = ttk.Label(lptw, text=firstconj1)
+    f_lbl2 = ttk.Label(lptw, text=firstconj2)
+    s_lbl1 = ttk.Label(lptw, text=secondconj1)
+    s_lbl2 = ttk.Label(lptw, text=secondconj2)
+
+    def gopt():
+        lptw.withdraw()
+        pt()
+
+    pt_button = ttk.Button(lptw, text='Practice consonant mutation', command=gopt)
+    golessons = ttk.Button(lptw, text='All lessons', command=lessons)
+    pt_button.place(x=5, y=215)
+    golessons.place(x=170, y=215)
+
+    learn_lbl.place(x=5, y=5)
+    m_lbl1.place(x=5, y=100)
+    m_lbl2.place(x=70, y=100)
+    exception_lbl.place(x=150, y=120)
+    lptw.geometry('380x245')
+    lptw.title('Learn present tense')
 def pt():
     global mode
-    mode = 'pt'
+    mode = 'present tense'
 
     mw.withdraw()
 
@@ -1238,5 +1302,4 @@ def pt():
     ptw.mainloop()
     all_verbs = []
 
-if __name__ == '__main__':
-    mainsetup()
+mainsetup()
