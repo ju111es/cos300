@@ -18,6 +18,7 @@ olist = ['ж', 'ч', 'ш', 'щ', 'ц']
 vowels = ['а', 'я', 'у', 'ю', 'о', 'е', 'ё', 'и', 'ы']
 
 def spellcheck(string):
+    # some vowels (ы, ю, я, sometimes o) can't follow certain consonants.
     ispelling = []
     for letter in ilist:
         ispelling.append(letter + 'ы')
@@ -202,7 +203,6 @@ class Noun:
             self.d[1].append('ям')
             self.i[1].append('ями')
 
-        # some vowels (ы, ю, я, sometimes o) can't follow certain consonants.
         if self.nom_stem[-1] in ilist:
             self.plural = self.plural.replace('ы', 'и')
             self.g[0][1] = self.g[0][1].replace('ы', 'и')
@@ -239,7 +239,9 @@ class Noun:
         print('\n')
 
     def case_check(self):
+        # figure out whether the answer is singular or plural
         form = self.qlist[all_nouns.index(self)]
+        # assign value as answer
         if form == self.plural:
             if mode == 'genitive':
                 a = ''.join(self.g[1])
@@ -262,6 +264,7 @@ class Noun:
                 a = ''.join(self.d[0])
             else:
                 a = ''.join(self.i[0])
+        # get input to check against answer
         i = self.inplist[all_nouns.index(self)].get()
 
         nw = Tk()
@@ -273,7 +276,7 @@ class Noun:
             prepositional = a not in self.p and i in self.p
             dative = a not in self.d and i in self.d
             instrumental = a not in self.i and i in self.i
-            print(i in self.p)
+            # did they apply the wrong case?
 
             wrong_plurality = False
             if form == self.plural:
@@ -284,6 +287,7 @@ class Noun:
                 for item in self.cases:
                     if i == item[1]:
                         wrong_plurality = True
+            # did they use the singular form when assigned plural, or vice versa?
 
             if nominative or genitive or accusative or prepositional or dative or instrumental:
                 correction = 'It looks like you applied the wrong case.' \
@@ -577,14 +581,18 @@ class Verb:
                     pass
 
             if wrong_i or wrong_you or wrong_he or wrong_we or wrong_youp or wrong_they:
-                correction = ttk.Label(nw, text='It looks like you used the wrong conjugation.\n'
-                                                'If you need a refresher on present tense conjugation, \nclick Learn.')
+                if mode == 'consonant mutation':
+                    correction = ttk.Label(nw, text='It looks like you used the wrong conjugation.\n If you need a '
+                                                    'refresher on present tense conjugation, \ngo to Lessons.')
+                else:
+                    correction = ttk.Label(nw, text='It looks like you used the wrong conjugation.\n If you need a '
+                                                    'refresher on present tense conjugation, \nclick Learn.')
                 correction.place(x=8, y=8)
                 nw.geometry('295x65')
                 nw.mainloop()
                 return 'wrong pronoun'
             elif past:
-                if mode == 'cm':
+                if mode == 'consonant mutation':
                     correction = ttk.Label(nw, text='Consonant mutation only occurs in present tense.'
                                                     '\nIf you need a refresher on how it works, click Learn.')
                 else:
@@ -765,6 +773,9 @@ def cm():
     questions = []
     # initializing verbs for the questions
 
+    global all_verbs
+    all_verbs = []
+
     # 1st conj, no mutation
     read = Verb('читать', 'чит', 'ать', questions, inp)
     jump = Verb('пригать', 'приг', 'ать', questions, inp)
@@ -782,7 +793,6 @@ def cm():
     prepare = Verb('готовить', 'готов', 'ить', questions, inp)
     clean = Verb('чистить', 'чист', 'ить', questions, inp)
 
-    global all_verbs
     pronouns = list(pronounsn.keys())
     for a in range(len(all_verbs)):
         q = []
@@ -830,6 +840,7 @@ def cm():
 
     cmw.geometry('300x360')
     cmw.title('Consonant mutation')
+    all_verbs = []
 
     y1 = 30
     for q in range(10):
@@ -840,7 +851,6 @@ def cm():
         y1 += 30
 
     cmw.mainloop()
-    all_verbs = []
 
 def lgc():
         lgcw = Tk()
@@ -903,6 +913,9 @@ def gc():
 
     questions = []
 
+    global all_nouns
+    all_nouns = []
+
     # -a noun
     cat = Noun('кошка', 'кошк', 'а', 'f', True, questions, inp)
     # -я noun ending in vowel
@@ -923,8 +936,6 @@ def gc():
     sea = Noun('море', 'мор', 'е', 'n', False, questions, inp)
     # -o noun
     apple = Noun('яблоко', 'яблок', 'о', 'n', False, questions, inp)
-
-    global all_nouns
 
     for i in range(len(all_nouns)):
         p = rnd.randint(0,1)
@@ -980,7 +991,6 @@ def gc():
         y1 += 30
 
     gcw.mainloop()
-    all_nouns = []
 
 def lac():
     pass
@@ -1020,7 +1030,7 @@ def pc():
     global mode
     mode = 'prepositional'
 
-    mw.destroy()
+    mw.withdraw()
 
     tut = 'Enter the prepositional form of the given nominative noun. There are singular and plural nouns given- ' \
           'enter the prepositional form matching the given nominative form.'
@@ -1045,6 +1055,9 @@ def pc():
 
     questions = []
 
+    global all_nouns
+    all_nouns = []
+
     # -a noun
     street = Noun('улица', 'улиц', 'а', 'f', False, questions, inp)
     # -ия noun
@@ -1065,8 +1078,6 @@ def pc():
     sun = Noun('солнце', 'солнц', 'е', 'n', False, questions, inp)
     # -o noun
     place = Noun('место', 'мест', 'о', 'n', False, questions, inp)
-
-    global all_nouns
 
     for i in range(len(all_nouns)):
         p = rnd.randint(0, 1)
@@ -1122,7 +1133,6 @@ def pc():
         y1 += 30
 
     pcw.mainloop()
-    all_nouns = []
 
 def ldc():
     pass
@@ -1142,54 +1152,114 @@ def lpt():
     lptw = Tk()
     learn1 = 'Verbs are conjugated in many different ways in the present tense.\n' \
             'First, there are two conjugation groups:'
-    firstconj1 = '1st conjugation: \nя -> ___ю \nты -> ___ешь \nон -> ___ет'
-    firstconj2 = '\nмы -> ___ем \nвы -> ___ете \nони -> ___ют'
-    secondconj1 = '2nd conjugation: \nя -> ___ю \nты -> ___ишь \nон -> ___ит'
-    secondconj2 = '\nмы -> ___им \nвы -> ___ите \nони -> ___ят'
-    learn2 = 'Most verbs with the ending -ить are in the second conjugation, while most verbs ' \
-                          'with ending -ать and -еть are in the first. There are some exceptions, but they ' \
-                          'won\'t be included in this exercise. Otherwise, all verbs are in the first conjugation. ' \
-                          'Verbs with different endings change differently from their infinitive to conjugated form.'
+    firstconj1 = '1st conjugation: \nя ___ю \nты ___ешь \nон ___ет'
+    firstconj2 = 'мы ___ем \nвы ___ете \nони ___ют'
+    secondconj1 = '2nd conjugation: \nя ___ю \nты ___ишь \nон ___ит'
+    secondconj2 = 'мы ___им \nвы ___ите \nони ___ят'
+    learn2 = 'Most verbs with the ending -ить are in the second conjugation,\nwhile most verbs ' \
+             'with ending -ать and -еть are in the first. \nThere are some exceptions, but they ' \
+             'won\'t be included in this exercise. \nOtherwise, all verbs are in the first conjugation. ' \
+             '\n\nVerbs with different endings change differently from their infinitive ' \
+             '\nto conjugated form.'
 
-    keep_vowel = 'Some verbs keep the vowel in their ending: \n-ать \n-ять \n-еть'
-    keep_vowel_ex = '\nчитать -> читаю \nгулять -> гуляю \nсметь -> смеет'
+    keep_vowel_l = 'Some verbs keep the vowel \nin their ending:'
+    keep_vowel = '-ать \n-ять \n-еть'
+    keep_vowel_ex = 'читать -> читаю \nгулять -> гуляю \nсметь -> смею'
 
-    mut_vowel = 'While others having mutating vowels: \n-авать \n-овать \n-евать \n-ыть'
-    mut_vowel_ex = '\nдавать -> даю \nцеловать -> целую \nтанцевать -> танцую \nоткрыть -> открою'
+    mut_vowel_l = 'While others have mutating vowels:'
+    mut_vowel = '-авать \n-овать \n-евать \n-ыть'
+    mut_vowel_ex = 'давать -> даю \nцеловать -> целую \nтанцевать -> танцую \nоткрыть -> открою'
 
-    drop_vowel = 'Some drop the vowel: \n-ить \n-оть \nать* \n*after consonant mutation'
-    drop_vowel_ex = '\nговорить -> говорю \nколоть -> колю \nплакать -> плачу'
+    drop_vowel_l = 'Some drop the vowel:'
+    drop_vowel = '-ить \n-оть \n-ать* \n* after consonant mutation'
+    drop_vowel_ex = 'говорить -> говорю \nколоть -> колю \nплакать -> плачу'
 
-    mut_n = 'Some mutate their last consonant to н: \n-стать \n-деть \nThese use у rather than ю in я & они forms.'
-    mut_n_ex = '\nвстать -> встану \nнадеть -> надену'
+    mut_n_l = 'Some mutate their last consonant to н:'
+    mut_n = '-стать \n-деть \nThese use у rather than ю \nin я & они forms.'
+    mut_n_ex = 'встать -> встану \nнадеть -> надену'
 
-    nyat = 'Then, theres -нять verbs... \n-инять -> -им \n-[other vowel]нять -> -[other vowel]йм ' \
+    nyat_l = 'Then, there\'s -нять verbs... '
+    nyat = '-инять -> -им \n-[other vowel]нять -> -[other vowel]йм ' \
            '\n-[consonant]нять -> -[consonant]ним \nLike н verbs, these use у instead of ю.'
-    nyat_ex = '\nпринять -> прмму \nпонять -> пойму \nподнять -> подниму'
+    nyat_ex = 'принять -> приму \nпонять -> пойму \nподнять -> подниму'
 
-    eret = 'And finally, -ереть: \n-ереть -> р \nWhich also uses у.'
-    eret_ex = '\nтереть -> тру'
+    eret_l = 'And finally, -ереть:'
+    eret = '-ереть -> р \nWhich also uses у.'
+    eret_ex = 'тереть -> тру'
 
-    learn_lbl = ttk.Label(lptw, text=learn1)
+    learn_lbl1 = ttk.Label(lptw, text=learn1)
     f_lbl1 = ttk.Label(lptw, text=firstconj1)
     f_lbl2 = ttk.Label(lptw, text=firstconj2)
     s_lbl1 = ttk.Label(lptw, text=secondconj1)
     s_lbl2 = ttk.Label(lptw, text=secondconj2)
+    learn_lbl2 = ttk.Label(lptw, text=learn2)
+
+    keep_lbl1 = ttk.Label(lptw, text=keep_vowel_l)
+    keep_lbl2 = ttk.Label(lptw, text=keep_vowel)
+    keep_lbl3 = ttk.Label(lptw, text=keep_vowel_ex)
+
+    mutv_lbl1 = ttk.Label(lptw, text=mut_vowel_l)
+    mutv_lbl2 = ttk.Label(lptw, text=mut_vowel)
+    mutv_lbl3 = ttk.Label(lptw, text=mut_vowel_ex)
+
+    drop_lbl1 = ttk.Label(lptw, text=drop_vowel_l)
+    drop_lbl2 = ttk.Label(lptw, text=drop_vowel)
+    drop_lbl3 = ttk.Label(lptw, text=drop_vowel_ex)
+
+    mutn_lbl1 = ttk.Label(lptw, text=mut_n_l)
+    mutn_lbl2 = ttk.Label(lptw, text=mut_n)
+    mutn_lbl3 = ttk.Label(lptw, text=mut_n_ex)
+
+    nyat_lbl1 = ttk.Label(lptw, text=nyat_l)
+    nyat_lbl2 = ttk.Label(lptw, text=nyat)
+    nyat_lbl3 = ttk.Label(lptw, text=nyat_ex)
+
+    eret_lbl1 = ttk.Label(lptw, text=eret_l)
+    eret_lbl2 = ttk.Label(lptw, text=eret)
+    eret_lbl3 = ttk.Label(lptw, text=eret_ex)
 
     def gopt():
         lptw.withdraw()
         pt()
 
-    pt_button = ttk.Button(lptw, text='Practice consonant mutation', command=gopt)
+    pt_button = ttk.Button(lptw, text='Practice present tense', command=gopt)
     golessons = ttk.Button(lptw, text='All lessons', command=lessons)
-    pt_button.place(x=5, y=215)
-    golessons.place(x=170, y=215)
 
-    learn_lbl.place(x=5, y=5)
-    m_lbl1.place(x=5, y=100)
-    m_lbl2.place(x=70, y=100)
-    exception_lbl.place(x=150, y=120)
-    lptw.geometry('380x245')
+    learn_lbl1.place(x=5, y=5)
+    f_lbl1.place(x=5, y=40)
+    f_lbl2.place(x=70, y=55)
+    s_lbl1.place(x=150, y=40)
+    s_lbl2.place(x=215, y=55)
+    learn_lbl2.place(x=5, y=105)
+
+    keep_lbl1.place(x=5, y=215)
+    keep_lbl2.place(x=5 , y=247)
+    keep_lbl3.place(x=40, y=247)
+
+    mutv_lbl1.place(x=165, y=215)
+    mutv_lbl2.place(x=165, y=232)
+    mutv_lbl3.place(x=210, y=232)
+
+    drop_lbl1.place(x=5, y=300)
+    drop_lbl2.place(x=5, y=317)
+    drop_lbl3.place(x=40, y=317)
+
+    mutn_lbl1.place(x=165, y=300)
+    mutn_lbl2.place(x=165, y=317)
+    mutn_lbl3.place(x=210, y=317)
+
+    nyat_lbl1.place(x=5, y=385)
+    nyat_lbl2.place(x=5, y=402)
+    nyat_lbl3.place(x=228, y=402)
+
+    eret_lbl1.place(x=5, y=470)
+    eret_lbl2.place(x=5, y=487)
+    eret_lbl3.place(x=80, y=487)
+
+    pt_button.place(x=5, y=525)
+    golessons.place(x=132, y=525)
+
+    lptw.geometry('380x560')
     lptw.title('Learn present tense')
 def pt():
     global mode
@@ -1197,7 +1267,7 @@ def pt():
 
     mw.withdraw()
 
-    tut = 'Enter just the present tense conjugation of the verb according to the pronoun in front of it' \
+    tut = 'Enter just the present tense conjugation of the verb according to the pronoun in front of it ' \
           'and press Enter. (Don\'t enter the pronoun, or it won\'t work correctly! ' \
           'Just the verb.)\n\nNone of these conjugations will undergo consonant mutation- ' \
           'this mode is just for present tense practice!'
@@ -1221,6 +1291,9 @@ def pt():
 
     questions = []
 
+    global all_verbs
+    all_verbs = []
+
     # 1st conj
     do = Verb('делать', 'дел', 'ать', questions, inp)
     stroll = Verb('гулять', 'гул', 'ять', questions, inp)
@@ -1239,7 +1312,6 @@ def pt():
     accept = Verb('принять', 'при', 'нять', questions, inp)
     die = Verb('умереть', 'ум', 'ереть', questions, inp)
 
-    global all_verbs
     pronouns = list(pronounsn.keys())
     for a in range(len(all_verbs)):
         q = []
@@ -1275,8 +1347,8 @@ def pt():
     lbl12 = ttk.Label(ptw, text=(' '.join(questions[11]) + '\n\n'))
     lbl = [lbl1, lbl2, lbl3, lbl4, lbl5, lbl6, lbl7, lbl8, lbl9, lbl10, lbl11, lbl12]
 
-    lcm_lbl = ttk.Label(ptw, text='Don\'t know consonant mutation?')
-    golcm = ttk.Button(ptw, text='Learn', command=lcm)
+    lcm_lbl = ttk.Label(ptw, text='Don\'t know present tense?')
+    golcm = ttk.Button(ptw, text='Learn', command=lpt)
     lcm_lbl.place(x=5, y=1)
     golcm.place(x=190, y=1)
 
@@ -1294,12 +1366,13 @@ def pt():
     y1 = 30
     for q in range(12):
         lbl[q].place(x=5, y=y1)
-        inp[q].place(x=85, y=y1)
-        ent[q].place(x=215, y=y1 - 1)
+        inp[q].place(x=87, y=y1)
+        ent[q].place(x=217, y=y1 - 1)
         ptw.update()
         y1 += 30
 
     ptw.mainloop()
     all_verbs = []
+    print('hai')
 
 mainsetup()
