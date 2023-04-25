@@ -268,16 +268,16 @@ class Noun:
         i = self.inplist[all_nouns.index(self)].get()
 
         nw = Tk()
-        correction = ''
         if i != a:
+            # did they apply the wrong case?
             nominative = i == self.noun or i == self.plural
             genitive = a not in self.g and i in self.g
             accusative = a not in self.a and i in self.a
             prepositional = a not in self.p and i in self.p
             dative = a not in self.d and i in self.d
             instrumental = a not in self.i and i in self.i
-            # did they apply the wrong case?
 
+            # did they use the singular form when assigned plural, or vice versa?
             wrong_plurality = False
             if form == self.plural:
                 for item in self.cases:
@@ -287,14 +287,12 @@ class Noun:
                 for item in self.cases:
                     if i == item[1]:
                         wrong_plurality = True
-            # did they use the singular form when assigned plural, or vice versa?
 
             if nominative or genitive or accusative or prepositional or dative or instrumental:
                 correction = 'It looks like you applied the wrong case.' \
                              '\nIf you need a refresher on the ' + str(mode) + ' case, click Learn.'
             elif wrong_plurality:
                 correction = 'Make sure you are applying the ' + str(mode) + ' form \nmatching the given nominative form.'
-                nw.update()
             elif spellcheck(i) != False:
                 error = spellcheck(i)
                 correction = error[1] + ' cannot follow ' + error[0] + '.'
@@ -306,8 +304,10 @@ class Noun:
                                  '\nIf you need a refresher on the genitive case, click Learn.'
             elif mode == 'accusative':
                 if self.gender == 'm' and self.animate is False and i in self.g:
-                    correction = 'Inanimate masculine nouns do not change in the accusative case,' \
-                                 '\nand all inanimate nouns use the nominative plural in the accusative.' \
+                    correction = 'Inanimate masculine nouns do not change \nin the accusative case.' \
+                                 '\nIf you need a refresher on the accusative case, click Learn.'
+                elif form == self.plural and self.animate is False and i in self.g:
+                    correction = 'Inanimate nouns use their nominative plural in the accusative.' \
                                  '\nIf you need a refresher on the accusative case, click Learn.'
             elif mode == 'prepositional':
                 if self.nom_end == 'я' or self.nom_end == 'е' and self.nom_stem[-1] == 'и' and i[-1] == 'е':
@@ -517,47 +517,53 @@ class Verb:
         a = self.conjs[pronoun_index]
 
         i = self.inplist[all_verbs.index(self)].get()
+        # more thorough explanation in present_check()
 
         nw = Tk()
         nw.withdraw()
         if i != a:
             if self.find_mutation() is True and self.stem in i:
-                correction = ttk.Label(nw, text='This is an instance of consonant mutation. '
-                                                '\nIf you need a refresher on how it works, click Learn.')
+                correction = 'This is an instance of consonant mutation. ' \
+                           '\nIf you need a refresher on how it works, click Learn.'
             elif hasattr(self, 'mutStem') and self.mutStem in i and self.find_mutation() is False:
-                correction = ttk.Label(nw, text='This is NOT an instance of consonant mutation. '
-                                                '\nIf you need a refresher on how it works, click Learn.')
-            elif self.present_check() == 'wrong pronoun' or self.present_check() == 'past tense' \
-                    or self.present_check() == 'pronoun entered':
-                return
+                correction = 'This is NOT an instance of consonant mutation. ' \
+                             '\nIf you need a refresher on how it works, click Learn.'
+            elif self.present_check() != ':P':
+                # if the error isn't related to consonant mutation, it will be corrected here (unless it's just random)
+                correction = self.present_check()
             elif spellcheck(i) != False:
                 error = spellcheck(i)
-                spelling_correction = error[1] + ' cannot follow ' + error[0] + '.'
-                correction = ttk.Label(nw, text=spelling_correction)
+                correction = error[1] + ' cannot follow ' + error[0] + '.'
             else:
-                correction = ttk.Label(nw, text='Incorrect...')
+                correction = 'Incorrect...'
         else:
-            correction = ttk.Label(nw, text='Correct!')
+            correction = 'Correct!'
         nw.deiconify()
-        correction.place(x=8, y=8)
+        correction_lbl = ttk.Label(nw, text=correction)
+        correction_lbl.place(x=8, y=8)
         nw.geometry('290x50')
         nw.mainloop()
 
     def present_check(self):
+        # fetch the pronoun currently attached to the verb
         pronoun = self.qlist[all_verbs.index(self)][0]
         pronouns = list(pronounsn.keys())
         pronouns.pop(pronouns.index('она'))
         pronouns.pop(pronouns.index('оно'))
+        # get rid of she and it pronouns because they're the same as he and mess up the index
         if pronoun == 'она' or pronoun == 'оно':
             pronoun_index = pronouns.index('он')
         else:
             pronoun_index = pronouns.index(pronoun)
+        # and, assign the answer to check input against accordingly
         a = self.conjs[pronoun_index]
 
+        # fetch user input
         i = self.inplist[all_verbs.index(self)].get()
 
         nw = Tk()
         if i != a:
+            # if someone uses the wrong conjugation:
             wrong_i = a == ''.join(self.i) and i == self.conjs[1] or i == self.conjs[2] or i == self.conjs[3] \
                 or i == self.conjs[4] or i == self.conjs[5]
             wrong_you = a == ''.join(self.you) and i == self.conjs[0] or i == self.conjs[2] or i == self.conjs[3] \
@@ -571,7 +577,74 @@ class Verb:
             wrong_they = a == ''.join(self.they) and i == self.conjs[0] or i == self.conjs[1] or i == self.conjs[2] \
                 or i == self.conjs[3] or i == self.conjs[4]
 
+            wrong_pronoun = wrong_i or wrong_you or wrong_he or wrong_we or wrong_youp or wrong_they
+
+            # if they put it in past tense:
             past = i == self.mpast or i == self.fpast or i == self.npast or i == self.ppast
+
+            # i don't want to have to remove the pronoun if someone enters it so it will just tell them not to (again)
+            pronoun_entered = False
+            for item in list(pronounsn.keys()):
+                if (item + ' ') in i:
+                    pronoun_entered = True
+                else:
+                    pass
+
+            if wrong_pronoun:
+                if mode == 'consonant mutation':
+                    correction = 'It looks like you used the wrong conjugation.\n If you need a ' \
+                               'refresher on present tense conjugation, \ngo to Lessons.'
+                    # if they're in consonant mutation mode it says to open the Lessons window
+                    # also returns so nothing weird happens with the windows
+                    return correction
+                else:
+                    correction = 'It looks like you used the wrong conjugation.\n If you need a ' \
+                               'refresher on present tense conjugation, \nclick Learn.'
+                    # otherwise it just says to click Learn
+            elif past:
+                if mode == 'consonant mutation':
+                    correction = 'Consonant mutation only occurs in present tense.' \
+                                 '\nIf you need a refresher on how it works, click Learn.'
+                    return correction
+                else:
+                    correction = 'Remember, this is present tense practice!'
+            elif pronoun_entered:
+                correction = 'Please enter just the verb, not the pronoun.'
+                if mode == 'consonant mutation':
+                    return correction
+            else:
+                # if they got it wrong in some other, unpredictable way:
+                correction = 'Incorrect...'
+            if mode == 'consonant mutation' and wrong_pronoun is False and past is False and pronoun_entered is False:
+                return ':P'
+        else:
+            correction = 'Correct!'
+        correction_lbl = ttk.Label(nw, text=correction)
+        correction_lbl.place(x=8, y=8)
+        nw.geometry('290x50')
+        nw.mainloop()
+
+    def past_check(self):
+        pronoun = self.qlist[all_verbs.index(self)][0]
+        if pronoun == 'он':
+            a = self.mpast
+        elif pronoun == 'она':
+            a = self.fpast
+        elif pronoun == 'оно':
+            a = self.npast
+        else:
+            a = self.ppast
+
+        i = self.inplist[all_verbs.index(self)].get()
+
+        nw = Tk()
+        if i != a:
+            wrong_he = a == self.mpast and i == self.fpast or i == self.npast or i == self.ppast
+            wrong_she = a == self.fpast and i == self.mpast or i == self.npast or i == self.ppast
+            wrong_it = a == self.npast and i == self.mpast or i == self.fpast or i == self.ppast
+            wrong_plural = a == self.ppast and i == self.fpast or i == self.npast or i == self.npast
+
+            present = i in self.conjs
 
             pronoun_entered = False
             for item in list(pronounsn.keys()):
@@ -580,55 +653,36 @@ class Verb:
                 else:
                     pass
 
-            if wrong_i or wrong_you or wrong_he or wrong_we or wrong_youp or wrong_they:
-                if mode == 'consonant mutation':
-                    correction = ttk.Label(nw, text='It looks like you used the wrong conjugation.\n If you need a '
-                                                    'refresher on present tense conjugation, \ngo to Lessons.')
-                else:
-                    correction = ttk.Label(nw, text='It looks like you used the wrong conjugation.\n If you need a '
-                                                    'refresher on present tense conjugation, \nclick Learn.')
-                correction.place(x=8, y=8)
-                nw.geometry('295x65')
-                nw.mainloop()
-                return 'wrong pronoun'
-            elif past:
-                if mode == 'consonant mutation':
-                    correction = ttk.Label(nw, text='Consonant mutation only occurs in present tense.'
-                                                    '\nIf you need a refresher on how it works, click Learn.')
-                else:
-                    correction = ttk.Label(nw, text='Remember, this is present tense practice!')
-                correction.place(x=8, y=8)
-                nw.geometry('290x50')
-                nw.mainloop()
-                return 'past tense'
+            if wrong_he or wrong_she or wrong_it or wrong_plural:
+                correction = 'It looks like you used the wrong conjugation.\n If you need a ' \
+                             'refresher on past tense conjugation, \nclick Learn.'
+                # unlike present_check(), this doesn't have to return anything because i'm not using it elsewhere
+            elif present:
+                correction = 'Remember, this is past tense practice!'
             elif pronoun_entered:
-                correction = ttk.Label(nw, text='Please enter just the verb, not the pronoun.')
-                correction.place(x=8, y=8)
-                nw.geometry('290x50')
-                nw.mainloop()
-                return 'pronoun entered'
+                correction = 'Please enter just the verb, not the pronoun.'
             else:
-                correction = ttk.Label(nw, text='Incorrect...')
+                correction = 'Incorrect...'
         else:
-            correction = ttk.Label(nw, text='Correct!')
-        correction.place(x=8, y=8)
-        nw.geometry('290x50')
-        nw.mainloop()
+            correction = 'Correct!'
 
-    def past_check(self):
-        pass
+        correction_lbl = ttk.Label(nw, text=correction)
+        correction_lbl.place(x=8, y=8)
+        nw.geometry('290x65')
+        nw.mainloop()
 
 mw = Tk()
 def mainsetup():
     greeting = ttk.Label(mw, text='Welcome! What would you like to practice?')
 
     gogc = ttk.Button(mw, text='Genitive Case', command=gc)
-    goac = ttk.Button(mw, text='Accusative Case', command=acsetup)
+    goac = ttk.Button(mw, text='Accusative Case', command=ac)
     gopc = ttk.Button(mw, text='Prepositional Case', command=pc)
     godc = ttk.Button(mw, text='Dative Case', command=dcsetup)
     goic = ttk.Button(mw, text='Instrumental Case', command=icsetup)
     gocm = ttk.Button(mw, text='Consonant Mutation', command=cm)
-    gopt = ttk.Button(mw, text='Present Tense', command=pt)
+    goprt = ttk.Button(mw, text='Present Tense', command=prt)
+    gopat = ttk.Button(mw, text='Past Tense', command=pat)
 
     tutlbl = ttk.Label(mw, text='Or, go to')
     gotuts = ttk.Button(mw, text='Lessons', command=lessons)
@@ -641,7 +695,8 @@ def mainsetup():
     godc.place(x=20,y=140)
     goic.place(x=20,y=170)
     gocm.place(x=135,y=50)
-    gopt.place(x=135,y=80)
+    goprt.place(x=135, y=80)
+    gopat.place(x=135, y=110)
 
     tutlbl.place(x=20,y=212)
     gotuts.place(x=75,y=210)
@@ -686,8 +741,12 @@ def lessons():
     lcm_button = ttk.Button(lw, text='Consonant mutation', command=golcm)
     def golpresent():
         lw.withdraw()
-        lpt()
+        lprt()
     lpresent_button = ttk.Button(lw, text='Present tense', command=golpresent)
+    def golpast():
+        lw.withdraw()
+        lpat()
+    lpast_button = ttk.Button(lw, text='Past tense', command=golpast)
 
     def home():
         lw.withdraw()
@@ -701,6 +760,7 @@ def lessons():
     lic_button.place(x=20, y=170)
     lcm_button.place(x=135, y=50)
     lpresent_button.place(x=135,y=80)
+    lpast_button.place(x=135, y=110)
     gohome.place(x=20, y=210)
     greeting.place(x=20, y=18)
     lw.geometry('280x245')
@@ -929,7 +989,7 @@ def gc():
     # -ь noun, masculine
     dictionary = Noun('словарь', 'словар', 'ь', 'm', False, questions, inp)
     # -ь noun, feminine
-    bear = Noun('медведь', 'медвед', 'ь', 'f', True, questions, inp)
+    door = Noun('дверь', 'двер', 'ь', 'f', True, questions, inp)
     # -e noun ending in и
     room = Noun('помещение', 'помещени', 'е', 'n', False, questions, inp)
     # -e noun ending in consonant
@@ -993,11 +1053,143 @@ def gc():
     gcw.mainloop()
 
 def lac():
-    pass
-def acsetup():
-    mw.destroy()
-    ac = Tk()
-    ac.mainloop()
+    lacw = Tk()
+    learn = 'The accusative case in Russian is applied to the object\nof a sentence- ' \
+            'Something that is having an action performed on it.\nSo, how is it applied?'
+    acc1 = 'Nouns ending in -> become:\n' \
+           'hard consonant -> ADD а \nй -> я \nь (masc) -> я \nа -> у \nя -> ю\n' \
+           'Inanimate masculine nouns do not change. \nFeminine nouns ending in  do not change. \n' \
+           'Neutral nouns do not change.'
+    acc2 = 'And, plural:\n' \
+           'Animate nouns use their gentive plural; \nInanimate objects use their nominative \n(regular) plural.'
+    anim = 'An animate noun can think and perform actions on its own- \nsuch as a human or an animal.\n' \
+           'An inanimate noun cannot- such as a plant, table, or rock.'
+
+    learn_lbl = ttk.Label(lacw, text=learn)
+    a_lbl1 = ttk.Label(lacw, text=acc1)
+    a_lbl2 = ttk.Label(lacw, text=acc2)
+    anim_lbl = ttk.Label(lacw, text=anim)
+
+    def goac():
+        lacw.withdraw()
+        ac()
+
+    ac_button = ttk.Button(lacw, text='Practice accusative case', command=goac)
+    golessons = ttk.Button(lacw, text='All lessons', command=lessons)
+    ac_button.place(x=5, y=270)
+    golessons.place(x=143, y=270)
+
+    learn_lbl.place(x=5, y=5)
+    a_lbl1.place(x=5, y=65)
+    a_lbl2.place(x=170, y=65)
+    anim_lbl.place(x=5, y=210)
+    lacw.geometry('380x300')
+    lacw.title('Learn accusative case')
+    lacw.mainloop()
+def ac():
+    global mode
+    mode = 'accusative'
+
+    mw.withdraw()
+
+    tut = 'Enter the accusative form of the given nominative noun. There are singular and plural nouns given- ' \
+          'enter the accusative form matching the given nominative form.'
+    tutorial(tut)
+
+    acw = Tk()
+
+    lac_lbl = ttk.Label(acw, text='Don\'t know the accusative case?')
+    golac = ttk.Button(acw, text='Learn', command=lac)
+
+    inp1 = ttk.Entry(acw)
+    inp2 = ttk.Entry(acw)
+    inp3 = ttk.Entry(acw)
+    inp4 = ttk.Entry(acw)
+    inp5 = ttk.Entry(acw)
+    inp6 = ttk.Entry(acw)
+    inp7 = ttk.Entry(acw)
+    inp8 = ttk.Entry(acw)
+    inp9 = ttk.Entry(acw)
+    inp10 = ttk.Entry(acw)
+    inp = [inp1, inp2, inp3, inp4, inp5, inp6, inp7, inp8, inp9, inp10]
+
+    questions = []
+
+    global all_nouns
+    all_nouns = []
+
+    # inanimate masc
+    glass = Noun('стакан', 'стакан', '', 'm', False, questions, inp)
+    glue = Noun('клей', 'кле', 'й', 'm', False, questions, inp)
+
+    # animate masc
+    person = Noun('человек', 'человек', '', 'm', True, questions, inp)
+    villian = Noun('злодей', 'злоде', 'й', 'm', True, questions, inp)
+    king = Noun('король', 'корол', 'ь', 'm', True, questions, inp)
+
+    # fem
+    book = Noun('книга', 'книг', 'а', 'f', False, questions, inp)
+    russia = Noun('Россия', 'Росси', 'я', 'f', False, questions, inp)
+    bear = Noun('медведь', 'медвед', 'ь', 'f', True, questions, inp)
+
+    # neu
+    heart = Noun('сердце', 'сердц', 'е', 'n', False, questions, inp)
+    window = Noun('окно', 'окн', 'о', 'n', False, questions, inp)
+
+    for i in range(len(all_nouns)):
+        p = rnd.randint(0, 1)
+        if p == 0:
+            questions.append(all_nouns[i].noun)
+        else:
+            questions.append(all_nouns[i].plural)
+
+    ent1 = ttk.Button(acw, command=all_nouns[0].case_check, text='Enter')
+    ent2 = ttk.Button(acw, command=all_nouns[1].case_check, text='Enter')
+    ent3 = ttk.Button(acw, command=all_nouns[2].case_check, text='Enter')
+    ent4 = ttk.Button(acw, command=all_nouns[3].case_check, text='Enter')
+    ent5 = ttk.Button(acw, command=all_nouns[4].case_check, text='Enter')
+    ent6 = ttk.Button(acw, command=all_nouns[5].case_check, text='Enter')
+    ent7 = ttk.Button(acw, command=all_nouns[6].case_check, text='Enter')
+    ent8 = ttk.Button(acw, command=all_nouns[7].case_check, text='Enter')
+    ent9 = ttk.Button(acw, command=all_nouns[8].case_check, text='Enter')
+    ent10 = ttk.Button(acw, command=all_nouns[9].case_check, text='Enter')
+    ent = [ent1, ent2, ent3, ent4, ent5, ent6, ent7, ent8, ent9, ent10]
+
+    lbl1 = ttk.Label(acw, text=(questions[0] + '\n\n'))
+    lbl2 = ttk.Label(acw, text=(questions[1] + '\n\n'))
+    lbl3 = ttk.Label(acw, text=(questions[2] + '\n\n'))
+    lbl4 = ttk.Label(acw, text=(questions[3] + '\n\n'))
+    lbl5 = ttk.Label(acw, text=(questions[4] + '\n\n'))
+    lbl6 = ttk.Label(acw, text=(questions[5] + '\n\n'))
+    lbl7 = ttk.Label(acw, text=(questions[6] + '\n\n'))
+    lbl8 = ttk.Label(acw, text=(questions[7] + '\n\n'))
+    lbl9 = ttk.Label(acw, text=(questions[8] + '\n\n'))
+    lbl10 = ttk.Label(acw, text=(questions[9] + '\n\n'))
+    lbl = [lbl1, lbl2, lbl3, lbl4, lbl5, lbl6, lbl7, lbl8, lbl9, lbl10]
+
+    lac_lbl.place(x=5, y=1)
+    golac.place(x=195, y=1)
+
+    def home():
+        acw.withdraw()
+        mw.deiconify()
+    gohome = ttk.Button(acw, text='Home', command=home)
+    gotuts = ttk.Button(acw, text='Tutorials', command=lessons)
+    gohome.place(x=5, y=330)
+    gotuts.place(x=90, y=330)
+
+    acw.geometry('280x360')
+    acw.title('Accusative case')
+
+    y1 = 30
+    for q in range(10):
+        lbl[q].place(x=5, y=y1)
+        inp[q].place(x=65, y=y1)
+        ent[q].place(x=195, y=y1 - 1)
+        acw.update()
+        y1 += 30
+
+    acw.mainloop()
 
 def lpc():
         lpcw = Tk()
@@ -1148,8 +1340,8 @@ def icsetup():
     ic = Tk()
     ic.mainloop()
 
-def lpt():
-    lptw = Tk()
+def lprt():
+    lprtw = Tk()
     learn1 = 'Verbs are conjugated in many different ways in the present tense.\n' \
             'First, there are two conjugation groups:'
     firstconj1 = '1st conjugation: \nя ___ю \nты ___ешь \nон ___ет'
@@ -1187,43 +1379,43 @@ def lpt():
     eret = '-ереть -> р \nWhich also uses у.'
     eret_ex = 'тереть -> тру'
 
-    learn_lbl1 = ttk.Label(lptw, text=learn1)
-    f_lbl1 = ttk.Label(lptw, text=firstconj1)
-    f_lbl2 = ttk.Label(lptw, text=firstconj2)
-    s_lbl1 = ttk.Label(lptw, text=secondconj1)
-    s_lbl2 = ttk.Label(lptw, text=secondconj2)
-    learn_lbl2 = ttk.Label(lptw, text=learn2)
+    learn_lbl1 = ttk.Label(lprtw, text=learn1)
+    f_lbl1 = ttk.Label(lprtw, text=firstconj1)
+    f_lbl2 = ttk.Label(lprtw, text=firstconj2)
+    s_lbl1 = ttk.Label(lprtw, text=secondconj1)
+    s_lbl2 = ttk.Label(lprtw, text=secondconj2)
+    learn_lbl2 = ttk.Label(lprtw, text=learn2)
 
-    keep_lbl1 = ttk.Label(lptw, text=keep_vowel_l)
-    keep_lbl2 = ttk.Label(lptw, text=keep_vowel)
-    keep_lbl3 = ttk.Label(lptw, text=keep_vowel_ex)
+    keep_lbl1 = ttk.Label(lprtw, text=keep_vowel_l)
+    keep_lbl2 = ttk.Label(lprtw, text=keep_vowel)
+    keep_lbl3 = ttk.Label(lprtw, text=keep_vowel_ex)
 
-    mutv_lbl1 = ttk.Label(lptw, text=mut_vowel_l)
-    mutv_lbl2 = ttk.Label(lptw, text=mut_vowel)
-    mutv_lbl3 = ttk.Label(lptw, text=mut_vowel_ex)
+    mutv_lbl1 = ttk.Label(lprtw, text=mut_vowel_l)
+    mutv_lbl2 = ttk.Label(lprtw, text=mut_vowel)
+    mutv_lbl3 = ttk.Label(lprtw, text=mut_vowel_ex)
 
-    drop_lbl1 = ttk.Label(lptw, text=drop_vowel_l)
-    drop_lbl2 = ttk.Label(lptw, text=drop_vowel)
-    drop_lbl3 = ttk.Label(lptw, text=drop_vowel_ex)
+    drop_lbl1 = ttk.Label(lprtw, text=drop_vowel_l)
+    drop_lbl2 = ttk.Label(lprtw, text=drop_vowel)
+    drop_lbl3 = ttk.Label(lprtw, text=drop_vowel_ex)
 
-    mutn_lbl1 = ttk.Label(lptw, text=mut_n_l)
-    mutn_lbl2 = ttk.Label(lptw, text=mut_n)
-    mutn_lbl3 = ttk.Label(lptw, text=mut_n_ex)
+    mutn_lbl1 = ttk.Label(lprtw, text=mut_n_l)
+    mutn_lbl2 = ttk.Label(lprtw, text=mut_n)
+    mutn_lbl3 = ttk.Label(lprtw, text=mut_n_ex)
 
-    nyat_lbl1 = ttk.Label(lptw, text=nyat_l)
-    nyat_lbl2 = ttk.Label(lptw, text=nyat)
-    nyat_lbl3 = ttk.Label(lptw, text=nyat_ex)
+    nyat_lbl1 = ttk.Label(lprtw, text=nyat_l)
+    nyat_lbl2 = ttk.Label(lprtw, text=nyat)
+    nyat_lbl3 = ttk.Label(lprtw, text=nyat_ex)
 
-    eret_lbl1 = ttk.Label(lptw, text=eret_l)
-    eret_lbl2 = ttk.Label(lptw, text=eret)
-    eret_lbl3 = ttk.Label(lptw, text=eret_ex)
+    eret_lbl1 = ttk.Label(lprtw, text=eret_l)
+    eret_lbl2 = ttk.Label(lprtw, text=eret)
+    eret_lbl3 = ttk.Label(lprtw, text=eret_ex)
 
-    def gopt():
-        lptw.withdraw()
-        pt()
+    def goprt():
+        lprtw.withdraw()
+        prt()
 
-    pt_button = ttk.Button(lptw, text='Practice present tense', command=gopt)
-    golessons = ttk.Button(lptw, text='All lessons', command=lessons)
+    prt_button = ttk.Button(lprtw, text='Practice present tense', command=goprt)
+    golessons = ttk.Button(lprtw, text='All lessons', command=lessons)
 
     learn_lbl1.place(x=5, y=5)
     f_lbl1.place(x=5, y=40)
@@ -1256,12 +1448,12 @@ def lpt():
     eret_lbl2.place(x=5, y=487)
     eret_lbl3.place(x=80, y=487)
 
-    pt_button.place(x=5, y=525)
+    prt_button.place(x=5, y=525)
     golessons.place(x=132, y=525)
 
-    lptw.geometry('380x560')
-    lptw.title('Learn present tense')
-def pt():
+    lprtw.geometry('380x560')
+    lprtw.title('Learn present tense')
+def prt():
     global mode
     mode = 'present tense'
 
@@ -1348,9 +1540,9 @@ def pt():
     lbl = [lbl1, lbl2, lbl3, lbl4, lbl5, lbl6, lbl7, lbl8, lbl9, lbl10, lbl11, lbl12]
 
     lcm_lbl = ttk.Label(ptw, text='Don\'t know present tense?')
-    golcm = ttk.Button(ptw, text='Learn', command=lpt)
+    golcm = ttk.Button(ptw, text='Learn', command=lprt)
     lcm_lbl.place(x=5, y=1)
-    golcm.place(x=190, y=1)
+    golcm.place(x=150, y=1)
 
     def home():
         ptw.withdraw()
@@ -1374,5 +1566,148 @@ def pt():
     ptw.mainloop()
     all_verbs = []
     print('hai')
+
+def lpat():
+    lpatw = Tk()
+    learn1 = 'The past tense in Russian is formed according to gender of the subject. \nThe ending (-ть) is removed,' \
+             'and one of these endings is added: '
+    endings = 'masculine (он): -л \nfeminine (она): -ла \nneutral (оно): -ло \nplural (мы, вы, они): -ли'
+    example1 = 'желать -> желал'
+    example2 = '-> желала \n-> желало \n-> желали'
+    learn2 = 'In я and ты forms, the verb still changes according to the gender of the \nsubject (the person ' \
+             'performing the action). \nNotably, вы form always uses plural, even to refer to only one person.'
+
+    learn_lbl1 = ttk.Label(lpatw, text=learn1)
+    endings_lbl = ttk.Label(lpatw, text=endings)
+    example_lbl1 = ttk.Label(lpatw, text=example1)
+    example_lbl2 = ttk.Label(lpatw, text=example2)
+    learn_lbl2 = ttk.Label(lpatw, text=learn2)
+
+    def gopat():
+        lpatw.withdraw()
+        pat()
+
+    pat_button = ttk.Button(lpatw, text='Practice past tense', command=gopat)
+    golessons = ttk.Button(lpatw, text='All lessons', command=lessons)
+
+    learn_lbl1.place(x=5, y=5)
+    endings_lbl.place(x=5, y=40)
+    example_lbl1.place(x=130, y=40)
+    example_lbl2.place(x=172, y=55)
+    learn_lbl2.place(x=5, y=113)
+
+    pat_button.place(x=5, y=170)
+    golessons.place(x=115, y=170)
+
+    lpatw.title('Learn past tense')
+    lpatw.geometry('400x200')
+
+def pat():
+    global mode
+    mode = 'past tense'
+
+    mw.withdraw()
+
+    tut = 'Enter just the past tense conjugation of the verb according to the pronoun in front of it ' \
+          'and press Enter. (Don\'t enter the pronoun, or it won\'t work correctly! Just the verb.)'
+    tutorial(tut)
+
+    patw = Tk()
+
+    inp1 = ttk.Entry(patw, width=20)
+    inp2 = ttk.Entry(patw)
+    inp3 = ttk.Entry(patw)
+    inp4 = ttk.Entry(patw)
+    inp5 = ttk.Entry(patw)
+    inp6 = ttk.Entry(patw)
+    inp7 = ttk.Entry(patw)
+    inp8 = ttk.Entry(patw)
+    inp9 = ttk.Entry(patw)
+    inp10 = ttk.Entry(patw)
+    inp = [inp1, inp2, inp3, inp4, inp5, inp6, inp7, inp8, inp9, inp10]
+
+    questions = []
+    # initializing verbs for the questions
+
+    global all_verbs
+    all_verbs = []
+
+    # 1st conj
+    do = Verb('делать', 'дел', 'ать', questions, inp)
+    stroll = Verb('гулять', 'гул', 'ять', questions, inp)
+    have = Verb('иметь', 'им', 'еть', questions, inp)
+    split = Verb('колоть', 'кол', 'оть', questions, inp)
+
+    # 2nd conj
+    phone = Verb('звонить', 'звон', 'ить', questions, inp)
+
+    # special 1st conj
+    give = Verb('давать', 'д', 'авать', questions, inp)
+    dance = Verb('танцевать', 'танц', 'евать', questions, inp)
+    wash = Verb('мыть', 'м', 'ыть', questions, inp)
+    become = Verb('стать', '', 'стать', questions, inp)
+    put_on = Verb('надеть', 'на', 'деть', questions, inp)
+    accept = Verb('принять', 'при', 'нять', questions, inp)
+    die = Verb('умереть', 'ум', 'ереть', questions, inp)
+
+    pronouns = list(pronounsn.keys())
+    pronouns.pop(0)
+    pronouns.pop(0)
+    for a in range(len(all_verbs)):
+        q = []
+        q.append(pronouns[rnd.randint(0,len(pronouns)-1)])
+        q.append(all_verbs[a].verb)
+        questions.append(q)
+
+    ent1 = ttk.Button(patw, command=all_verbs[0].past_check, text='Enter')
+    ent2 = ttk.Button(patw, command=all_verbs[1].past_check, text='Enter')
+    ent3 = ttk.Button(patw, command=all_verbs[2].past_check, text='Enter')
+    ent4 = ttk.Button(patw, command=all_verbs[3].past_check, text='Enter')
+    ent5 = ttk.Button(patw, command=all_verbs[4].past_check, text='Enter')
+    ent6 = ttk.Button(patw, command=all_verbs[5].past_check, text='Enter')
+    ent7 = ttk.Button(patw, command=all_verbs[6].past_check, text='Enter')
+    ent8 = ttk.Button(patw, command=all_verbs[7].past_check, text='Enter')
+    ent9 = ttk.Button(patw, command=all_verbs[8].past_check, text='Enter')
+    ent10 = ttk.Button(patw, command=all_verbs[9].past_check, text='Enter')
+    ent = [ent1, ent2, ent3, ent4, ent5, ent6, ent7, ent8, ent9, ent10]
+
+    lbl1 = ttk.Label(patw, text=(' '.join(questions[0]) + '\n\n'))
+    lbl2 = ttk.Label(patw, text=(' '.join(questions[1]) + '\n\n'))
+    lbl3 = ttk.Label(patw, text=(' '.join(questions[2]) + '\n\n'))
+    lbl4 = ttk.Label(patw, text=(' '.join(questions[3]) + '\n\n'))
+    lbl5 = ttk.Label(patw, text=(' '.join(questions[4]) + '\n\n'))
+    lbl6 = ttk.Label(patw, text=(' '.join(questions[5]) + '\n\n'))
+    lbl7 = ttk.Label(patw, text=(' '.join(questions[6]) + '\n\n'))
+    lbl8 = ttk.Label(patw, text=(' '.join(questions[7]) + '\n\n'))
+    lbl9 = ttk.Label(patw, text=(' '.join(questions[8]) + '\n\n'))
+    lbl10 = ttk.Label(patw, text=(' '.join(questions[9]) + '\n\n'))
+    lbl = [lbl1, lbl2, lbl3, lbl4, lbl5, lbl6, lbl7, lbl8, lbl9, lbl10]
+
+    lpat_lbl = ttk.Label(patw, text='Don\'t know past tense?')
+    golpat = ttk.Button(patw, text='Learn', command=lpat)
+    lpat_lbl.place(x=5, y=1)
+    golpat.place(x=145, y=1)
+
+    # to get to the home page or tutorials page
+    def home():
+        patw.withdraw()
+        mw.deiconify()
+    gohome = ttk.Button(patw, text='Home', command=home)
+    gotuts = ttk.Button(patw, text='Tutorials', command=lessons)
+    gohome.place(x=5, y=330)
+    gotuts.place(x=90, y=330)
+
+    patw.geometry('305x360')
+    patw.title('Past tense')
+
+    y1 = 30
+    for q in range(10):
+        lbl[q].place(x=5, y=y1)
+        inp[q].place(x=90, y=y1)
+        ent[q].place(x=220, y=y1-1)
+        patw.update()
+        y1 += 30
+
+    patw.mainloop()
 
 mainsetup()
