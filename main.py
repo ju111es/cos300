@@ -268,6 +268,7 @@ class Noun:
         i = self.inplist[all_nouns.index(self)].get()
 
         nw = Tk()
+        correction = ''
         if i != a:
             # did they apply the wrong case?
             nominative = i == self.noun or i == self.plural
@@ -314,9 +315,14 @@ class Noun:
                     correction = 'ия and ие become ии, not ие.' \
                                  '\nIf you need a refresher on the prepositional case, click Learn.'
             elif mode == 'dative':
-                pass
+                if self.nom_end == 'я' and self.nom_stem[-1] == 'и' and i[-1] == 'е':
+                    correction = 'ия becomes ии, not ие.' \
+                                 '\nIf you need a refresher on the dative case, click Learn.'
+                elif self.nom_end == 'е' and self.nom_stem[-1] == 'и' and i[-1] == 'и':
+                    correction = 'Unlike the prepositional, ие and е nouns behave the same \nin the dative case. \n' \
+                                 'If you need a refresher on the dative case, click Learn.'
             elif mode == 'instrumental':
-                pass
+                correction = ''
             if correction == '':
                 correction = 'Incorrect...'
         else:
@@ -678,7 +684,7 @@ def mainsetup():
     gogc = ttk.Button(mw, text='Genitive Case', command=gc)
     goac = ttk.Button(mw, text='Accusative Case', command=ac)
     gopc = ttk.Button(mw, text='Prepositional Case', command=pc)
-    godc = ttk.Button(mw, text='Dative Case', command=dcsetup)
+    godc = ttk.Button(mw, text='Dative Case', command=dc)
     goic = ttk.Button(mw, text='Instrumental Case', command=icsetup)
     gocm = ttk.Button(mw, text='Consonant Mutation', command=cm)
     goprt = ttk.Button(mw, text='Present Tense', command=prt)
@@ -1327,11 +1333,144 @@ def pc():
     pcw.mainloop()
 
 def ldc():
-    pass
-def dcsetup():
-    mw.destroy()
-    dc = Tk()
-    dc.mainloop()
+    ldcw = Tk()
+    learn = 'The dative case in Russian is used to refer to the indirect object,\nof a sentence. ' \
+            '(ex: "I sent her a letter"- "letter" is the direct object, \n"her" is the indirect object.)\n' \
+            'It is also used fot most applications of the prepostion по; with verbs \nпомогать and советовать ' \
+            '(to help and to advise: you give \nhelp/advice); with нравиться (to like) and similar verbs; and ' \
+            'with \nнужен (to need)- in the last two, what you\'d expect to be the subject \nis in the dative. ' \
+            'So, how is it applied?'
+    dat1 = 'Nouns ending in -> become:\n' \
+           'hard consonant -> ADD у \nй -> ю \nь (masc) -> ю \nа -> е \nя -> е \nия -> ие'
+    dat2 = 'ь (fem) -> и \nо -> у \nе -> ю'
+    dat3 = 'And, plural:\n' \
+           'hard consonant, a, o -> ам \nall other nouns -> ям'
+
+    learn_lbl = ttk.Label(ldcw, text=learn)
+    d_lbl1 = ttk.Label(ldcw, text=dat1)
+    d_lbl2 = ttk.Label(ldcw, text=dat2)
+    d_lbl3 = ttk.Label(ldcw, text=dat3)
+
+    def godc():
+        ldcw.withdraw()
+        dc()
+    dc_button = ttk.Button(ldcw, text='Practice dative case', command=godc)
+    golessons = ttk.Button(ldcw, text='All lessons', command=lessons)
+    dc_button.place(x=5, y=250)
+    golessons.place(x=120, y=250)
+
+    learn_lbl.place(x=5, y=5)
+    d_lbl1.place(x=5, y=135)
+    d_lbl2.place(x=67, y=194)
+    d_lbl3.place(x=180, y=135)
+    ldcw.geometry('380x280')
+    ldcw.title('Learn dative case')
+    ldcw.mainloop()
+def dc():
+    global mode
+    mode = 'dative'
+
+    mw.withdraw()
+
+    tut = 'Enter the dative form of the given nominative noun. There are singular and plural nouns given- ' \
+          'enter the dative form matching the given nominative form.'
+    tutorial(tut)
+
+    dcw = Tk()
+
+    lpc_lbl = ttk.Label(dcw, text='Don\'t know the dative case?')
+    golpc = ttk.Button(dcw, text='Learn', command=ldc)
+
+    inp1 = ttk.Entry(dcw)
+    inp2 = ttk.Entry(dcw)
+    inp3 = ttk.Entry(dcw)
+    inp4 = ttk.Entry(dcw)
+    inp5 = ttk.Entry(dcw)
+    inp6 = ttk.Entry(dcw)
+    inp7 = ttk.Entry(dcw)
+    inp8 = ttk.Entry(dcw)
+    inp9 = ttk.Entry(dcw)
+    inp10 = ttk.Entry(dcw)
+    inp = [inp1, inp2, inp3, inp4, inp5, inp6, inp7, inp8, inp9, inp10]
+
+    questions = []
+
+    global all_nouns
+    all_nouns = []
+
+    # m
+    student = Noun('ученик', 'ученик', '', 'm', True, questions, inp)
+    shed = Noun('сарай', 'сара', 'й', 'm', False, questions, inp)
+    guy = Noun('парень', 'парен', 'ь', 'm', True, questions, inp)
+
+    # f
+    head = Noun('голова', 'голов', 'а', 'f', False, questions, inp)
+    earth = Noun('земля', 'земл', 'я', 'f', False, questions, inp)
+    life = Noun('жнизь', 'жниз', 'ь', 'f', False, questions, inp)
+
+    # -ия
+    party = Noun('партия', 'парти', 'я', 'f', False, questions, inp)
+
+    # n
+    happiness = Noun('счастье', 'счасть', 'е', 'n', False, questions, inp)
+    attitude = Noun('отношение', 'отношени', 'е', 'n', False, questions, inp)
+    face = Noun('лицо', 'лиц', 'о', 'n', False, questions, inp)
+
+    for i in range(len(all_nouns)):
+        p = rnd.randint(0, 1)
+        if p == 0:
+            questions.append(all_nouns[i].noun)
+        else:
+            questions.append(all_nouns[i].plural)
+
+    ent1 = ttk.Button(dcw, command=all_nouns[0].case_check, text='Enter')
+    ent2 = ttk.Button(dcw, command=all_nouns[1].case_check, text='Enter')
+    ent3 = ttk.Button(dcw, command=all_nouns[2].case_check, text='Enter')
+    ent4 = ttk.Button(dcw, command=all_nouns[3].case_check, text='Enter')
+    ent5 = ttk.Button(dcw, command=all_nouns[4].case_check, text='Enter')
+    ent6 = ttk.Button(dcw, command=all_nouns[5].case_check, text='Enter')
+    ent7 = ttk.Button(dcw, command=all_nouns[6].case_check, text='Enter')
+    ent8 = ttk.Button(dcw, command=all_nouns[7].case_check, text='Enter')
+    ent9 = ttk.Button(dcw, command=all_nouns[8].case_check, text='Enter')
+    ent10 = ttk.Button(dcw, command=all_nouns[9].case_check, text='Enter')
+    ent = [ent1, ent2, ent3, ent4, ent5, ent6, ent7, ent8, ent9, ent10]
+
+    lbl1 = ttk.Label(dcw, text=(questions[0] + '\n\n'))
+    lbl2 = ttk.Label(dcw, text=(questions[1] + '\n\n'))
+    lbl3 = ttk.Label(dcw, text=(questions[2] + '\n\n'))
+    lbl4 = ttk.Label(dcw, text=(questions[3] + '\n\n'))
+    lbl5 = ttk.Label(dcw, text=(questions[4] + '\n\n'))
+    lbl6 = ttk.Label(dcw, text=(questions[5] + '\n\n'))
+    lbl7 = ttk.Label(dcw, text=(questions[6] + '\n\n'))
+    lbl8 = ttk.Label(dcw, text=(questions[7] + '\n\n'))
+    lbl9 = ttk.Label(dcw, text=(questions[8] + '\n\n'))
+    lbl10 = ttk.Label(dcw, text=(questions[9] + '\n\n'))
+    lbl = [lbl1, lbl2, lbl3, lbl4, lbl5, lbl6, lbl7, lbl8, lbl9, lbl10]
+
+    lpc_lbl.place(x=5, y=1)
+    golpc.place(x=195, y=1)
+
+    def home():
+        dcw.withdraw()
+        mw.deiconify()
+
+    gohome = ttk.Button(dcw, text='Home', command=home)
+    gotuts = ttk.Button(dcw, text='Tutorials', command=lessons)
+    gohome.place(x=5, y=330)
+    gotuts.place(x=90, y=330)
+
+    dcw.geometry('300x360')
+    dcw.title('Dative case')
+
+    y1 = 30
+    for q in range(10):
+        lbl[q].place(x=5, y=y1)
+        inp[q].place(x=85, y=y1)
+        ent[q].place(x=215, y=y1 - 1)
+        dcw.update()
+        y1 += 30
+
+    dcw.mainloop()
 
 def lic():
     pass
@@ -1601,7 +1740,6 @@ def lpat():
 
     lpatw.title('Learn past tense')
     lpatw.geometry('400x200')
-
 def pat():
     global mode
     mode = 'past tense'
