@@ -1,9 +1,8 @@
-
 from tkinter import *
 from tkinter import ttk
 from tkinter import messagebox
+
 import random as rnd
-from idlelib.tooltip import Hovertip as Ht
 
 all_verbs = []
 all_nouns = []
@@ -77,7 +76,7 @@ class Noun:
         self.assign_cases()
 
     def assign_cases(self):
-        if self.nom_end == 'а':
+        if self.nom_end == 'а' or self.nom_end == 'á':
             self.plural = self.plural + 'ы'
             self.g[0].append('ы')
             if self.nom_stem[-1] not in vowels and self.nom_stem[-2] not in vowels:
@@ -122,7 +121,10 @@ class Noun:
                         self.g_stem = self.nom_stem.rstrip(self.nom_stem[-1]) + 'о' + self.nom_stem[-1]
                     self.g[1][0] = self.g_stem
                 self.g[1].append('ь')
-            self.i[0].append('ей')
+            if self.nom_end == 'я́':
+                self.i[0].append('ёй')
+            else:
+                self.i[0].append('ей')
             self.p[1].append('ях')
             self.d[1].append('ям')
             self.i[1].append('ями')
@@ -218,7 +220,8 @@ class Noun:
             self.d[1][1] = self.d[1][1].replace('я', 'а')
             self.i[1][1] = self.i[1][1].replace('я', 'а')
         if self.nom_stem[-1] in olist:
-            self.i[0][1] = self.i[0][1].replace('о', 'е')
+            if self.nom_end != 'á':
+                self.i[0][1] = self.i[0][1].replace('о', 'е')
 
         if self.animate is True:
             self.a[1] = self.g[1]
@@ -330,8 +333,10 @@ class Noun:
                     correction = 'Unlike the prepositional, ие and е nouns behave the same \nin the dative case. \n' \
                                  'If you need a refresher on the dative case, click Learn.'
             elif mode == 'instrumental':
-                if self.nom_stem[-1] in olist and i[-2] == 'о':
+                if self.nom_stem[-1] in olist and self.nom_end != 'á' and i[-2] == 'о':
                     correction = 'An unstressed o cannot follow ж, ц, ч, ш, or щ- \ninstead, use e.'
+                elif self.nom_end == 'я́' and i[-2] == 'е':
+                    correction = 'When stressed, е becomes ё.'
             if correction == '':
                 correction = 'Incorrect...'
         else:
@@ -350,12 +355,13 @@ class Noun:
 
 class Verb:
 
-    def __init__(self, verb, stem, ending, qlist, inplist):
+    def __init__(self, verb, stem, ending, qlist, inplist, english):
         self.verb = verb
         self.stem = stem
         self.ending = ending
         self.qlist = qlist
         self.inplist = inplist
+        self.english = english
 
         global all_verbs
         all_verbs.append(self)
@@ -470,11 +476,19 @@ class Verb:
         self.past_stem = list(self.verb)
         self.past_stem.pop(-1)
         self.past_stem.pop(-1)
+        if self.ending == 'ереть':
+            self.past_stem.pop(-1)
         self.past_stem = ''.join(self.past_stem)
-        self.mpast = self.past_stem + 'л'
-        self.fpast = self.past_stem + 'ла'
-        self.npast = self.past_stem + 'ло'
-        self.ppast = self.past_stem + 'ли'
+        if self.ending == 'ереть':
+            self.mpast = self.past_stem
+            self.fpast = self.past_stem + 'а'
+            self.npast = self.past_stem + 'о'
+            self.ppast = self.past_stem + 'и'
+        else:
+            self.mpast = self.past_stem + 'л'
+            self.fpast = self.past_stem + 'ла'
+            self.npast = self.past_stem + 'ло'
+            self.ppast = self.past_stem + 'ли'
 
     def find_mutation(self):
         # some consonants 'mutate' in certain verb conjugations. this function predicts when they will.
@@ -520,6 +534,20 @@ class Verb:
                 return False
         else:
             return False
+
+    def translate(self):
+        pronoun = self.qlist[all_verbs.index(self)][0]
+        translation = pronounsn.get(pronoun)
+        if mode != 'past tense':
+            if translation == 'he' or translation == 'she' or translation == 'it':
+                translation = translation + ' ' + self.english + 's'
+            else:
+                translation = translation + ' ' + self.english
+        else:
+            translation = translation + ' ' + self.english
+            # if it's in past tense mode i'll just put the english parameter in the past tense form because english
+            # has stupid irreuglar past tense.
+            # i know it's not totally ideal but it's not so bad imo
 
     def print_conjs(self):
         print(self.verb, 'conjugation:\n' + str(self.conjs), '\n')
@@ -893,21 +921,21 @@ def cm():
     all_verbs = []
 
     # 1st conj, no mutation
-    read = Verb('читать', 'чит', 'ать', questions, inp)
-    jump = Verb('пригать', 'приг', 'ать', questions, inp)
+    read = Verb('читáть', 'чит', 'ать', questions, inp)
+    jump = Verb('при́гать', 'при́г', 'ать', questions, inp)
     # 1st conj, mutation
-    write = Verb('писать', 'пис', 'ать', questions, inp)
-    cry = Verb('плакать', 'плак', 'ать', questions, inp)
+    write = Verb('писáть', 'пис', 'ать', questions, inp)
+    cry = Verb('плáкать', 'плáк', 'ать', questions, inp)
     # 1st conj, no mutation *because it's 1st conj*
-    think = Verb('думать', 'дум', 'ать', questions, inp)
-    fall = Verb('падать', 'пад', 'ать', questions, inp)
+    think = Verb('ду́мать', 'ду́м', 'ать', questions, inp)
+    fall = Verb('пáдать', 'пáд', 'ать', questions, inp)
 
     # 2nd conj, no mutation
-    speak = Verb('говорить', 'говор', 'ить', questions, inp)
-    mean = Verb('значить', 'знач', 'ить', questions, inp)
+    speak = Verb('говори́ть', 'говор', 'ить', questions, inp)
+    mean = Verb('знáчить', 'знáч', 'ить', questions, inp)
     # 2nd conj, mutation
-    prepare = Verb('готовить', 'готов', 'ить', questions, inp)
-    clean = Verb('чистить', 'чист', 'ить', questions, inp)
+    prepare = Verb('готóвить', 'готóв', 'ить', questions, inp)
+    clean = Verb('чи́стить', 'чи́ст', 'ить', questions, inp)
 
     pronouns = list(pronounsn.keys())
     for a in range(len(all_verbs)):
@@ -1038,25 +1066,25 @@ def gc():
     all_nouns = []
 
     # -a noun
-    cat = Noun('кошка', 'кошк', 'а', 'f', True, questions, inp)
+    cat = Noun('кóшка', 'кóшк', 'а', 'f', True, questions, inp)
     # -я noun ending in vowel
-    snake = Noun('змея', 'зме', 'я', 'f', True, questions, inp)
+    snake = Noun('змея́', 'зме', 'я́', 'f', True, questions, inp)
     # -я noun ending in consonant
-    kitchen = Noun('кухня', 'кухн', 'я', 'f', False, questions, inp)
+    kitchen = Noun('ку́хня', 'ку́хн', 'я', 'f', False, questions, inp)
     # - noun (hard consonant ending)
-    train = Noun('поезд', 'поезд', '', 'm', False, questions, inp)
+    train = Noun('пóезд', 'пóезд', '', 'm', False, questions, inp)
     # -й noun
-    tea = Noun('чай', 'ча', 'й', 'm', False, questions, inp)
+    tea = Noun('чáй', 'чá', 'й', 'm', False, questions, inp)
     # -ь noun, masculine
-    dictionary = Noun('словарь', 'словар', 'ь', 'm', False, questions, inp)
+    dictionary = Noun('словáрь', 'словáр', 'ь', 'm', False, questions, inp)
     # -ь noun, feminine
-    door = Noun('дверь', 'двер', 'ь', 'f', True, questions, inp)
+    door = Noun('двéрь', 'двер', 'ь', 'f', True, questions, inp)
     # -e noun ending in и
-    room = Noun('помещение', 'помещени', 'е', 'n', False, questions, inp)
+    room = Noun('помещéние', 'помещéни', 'е', 'n', False, questions, inp)
     # -e noun ending in consonant
-    sea = Noun('море', 'мор', 'е', 'n', False, questions, inp)
+    sea = Noun('морé', 'мор', 'é', 'n', False, questions, inp)
     # -o noun
-    apple = Noun('яблоко', 'яблок', 'о', 'n', False, questions, inp)
+    apple = Noun('я́блоко', 'я́блок', 'о', 'n', False, questions, inp)
 
     for i in range(len(all_nouns)):
         p = rnd.randint(0,1)
@@ -1185,22 +1213,22 @@ def ac():
     all_nouns = []
 
     # inanimate masc
-    glass = Noun('стакан', 'стакан', '', 'm', False, questions, inp)
-    glue = Noun('клей', 'кле', 'й', 'm', False, questions, inp)
+    glass = Noun('стакáн', 'стакáн', '', 'm', False, questions, inp)
+    glue = Noun('клéй', 'клé', 'й', 'm', False, questions, inp)
 
     # animate masc
-    person = Noun('человек', 'человек', '', 'm', True, questions, inp)
-    villian = Noun('злодей', 'злоде', 'й', 'm', True, questions, inp)
-    king = Noun('король', 'корол', 'ь', 'm', True, questions, inp)
+    person = Noun('человéк', 'человéк', '', 'm', True, questions, inp)
+    villian = Noun('злодéй', 'злодé', 'й', 'm', True, questions, inp)
+    king = Noun('корóль', 'корол', 'ь', 'm', True, questions, inp)
 
     # fem
-    book = Noun('книга', 'книг', 'а', 'f', False, questions, inp)
-    russia = Noun('Россия', 'Росси', 'я', 'f', False, questions, inp)
-    bear = Noun('медведь', 'медвед', 'ь', 'f', True, questions, inp)
+    book = Noun('кни́га', 'кни́г', 'а', 'f', False, questions, inp)
+    russia = Noun('Росси́я', 'Росси́', 'я', 'f', False, questions, inp)
+    bear = Noun('мéдведь', 'мéдвед', 'ь', 'f', True, questions, inp)
 
     # neu
-    heart = Noun('сердце', 'сердц', 'е', 'n', False, questions, inp)
-    window = Noun('окно', 'окн', 'о', 'n', False, questions, inp)
+    heart = Noun('сéрдце', 'сéрдц', 'е', 'n', False, questions, inp)
+    window = Noun('окнó', 'окн', 'ó', 'n', False, questions, inp)
 
     for i in range(len(all_nouns)):
         p = rnd.randint(0, 1)
@@ -1322,25 +1350,25 @@ def pc():
     all_nouns = []
 
     # -a noun
-    street = Noun('улица', 'улиц', 'а', 'f', False, questions, inp)
+    street = Noun('у́лица', 'у́лиц', 'а', 'f', False, questions, inp)
     # -ия noun
-    station = Noun('станция', 'станци', 'я', 'f', False, questions, inp)
+    station = Noun('стáнция', 'стáнци', 'я', 'f', False, questions, inp)
     # -я noun
-    family = Noun('семья', 'семь', 'я', 'f', True, questions, inp)
+    family = Noun('семья́', 'семь', 'я́', 'f', True, questions, inp)
     # - noun (hard consonant ending)
-    store = Noun('магазин', 'магазин', '', 'm', False, questions, inp)
+    store = Noun('магази́н', 'магази́н', '', 'm', False, questions, inp)
     # -й noun
-    museum = Noun('музей', 'музе', 'й', 'm', False, questions, inp)
+    museum = Noun('музéй', 'музé', 'й', 'm', False, questions, inp)
     # -ь noun, masculine
-    dictionary = Noun('словарь', 'словар', 'ь', 'm', False, questions, inp)
+    horse = Noun('кóнь', 'кóн', 'ь', 'm', False, questions, inp)
     # -ь noun, feminine
-    church = Noun('церковь', 'церков', 'ь', 'f', False, questions, inp)
+    church = Noun('цéрковь', 'цéрков', 'ь', 'f', False, questions, inp)
     # -e noun ending in и
-    building = Noun('здание', 'здани', 'е', 'n', False, questions, inp)
+    building = Noun('здáние', 'здáни', 'е', 'n', False, questions, inp)
     # -e noun ending in consonant
-    sun = Noun('солнце', 'солнц', 'е', 'n', False, questions, inp)
+    sun = Noun('сóлнце', 'сóлнц', 'е', 'n', False, questions, inp)
     # -o noun
-    place = Noun('место', 'мест', 'о', 'n', False, questions, inp)
+    place = Noun('мéсто', 'мéст', 'о', 'n', False, questions, inp)
 
     for i in range(len(all_nouns)):
         p = rnd.randint(0, 1)
@@ -1469,22 +1497,22 @@ def dc():
     all_nouns = []
 
     # m
-    student = Noun('ученик', 'ученик', '', 'm', True, questions, inp)
-    shed = Noun('сарай', 'сара', 'й', 'm', False, questions, inp)
-    guy = Noun('парень', 'парен', 'ь', 'm', True, questions, inp)
+    student = Noun('учени́к', 'учени́к', '', 'm', True, questions, inp)
+    shed = Noun('сарáй', 'сарá', 'й', 'm', False, questions, inp)
+    guy = Noun('пáрень', 'пáрен', 'ь', 'm', True, questions, inp)
 
     # f
-    head = Noun('голова', 'голов', 'а', 'f', False, questions, inp)
-    earth = Noun('земля', 'земл', 'я', 'f', False, questions, inp)
-    life = Noun('жнизь', 'жниз', 'ь', 'f', False, questions, inp)
+    head = Noun('головá', 'голов', 'á', 'f', False, questions, inp)
+    earth = Noun('земля́', 'земл', 'я́', 'f', False, questions, inp)
+    life = Noun('жни́зь', 'жни́з', 'ь', 'f', False, questions, inp)
 
     # -ия
-    party = Noun('партия', 'парти', 'я', 'f', False, questions, inp)
+    party = Noun('пáртия', 'пáрти', 'я', 'f', False, questions, inp)
 
     # n
-    happiness = Noun('счастье', 'счасть', 'е', 'n', False, questions, inp)
-    attitude = Noun('отношение', 'отношени', 'е', 'n', False, questions, inp)
-    face = Noun('лицо', 'лиц', 'о', 'n', False, questions, inp)
+    happiness = Noun('счáстье', 'счáсть', 'е', 'n', False, questions, inp)
+    attitude = Noun('отношéние', 'отношéни', 'е', 'n', False, questions, inp)
+    face = Noun('лицó', 'лиц', 'ó', 'n', False, questions, inp)
 
     for i in range(len(all_nouns)):
         p = rnd.randint(0, 1)
@@ -1610,20 +1638,20 @@ def ic():
     all_nouns = []
 
     # m
-    sugar = Noun('сахар', 'сахар', '', 'm', False, questions, inp)
-    comrade = Noun('товарищ', 'товарищ', '', 'm', True, questions, inp)
-    sparrow = Noun('воробей', 'воробе', 'й', 'm', True, questions, inp)
-    shampoo = Noun('шампунь', 'шампун', 'ь', 'm', False, questions, inp)
+    sugar = Noun('сáхар', 'сáхар', '', 'm', False, questions, inp)
+    comrade = Noun('товáрищ', 'товáрищ', '', 'm', True, questions, inp)
+    sparrow = Noun('воробéй', 'воробé', 'й', 'm', True, questions, inp)
+    shampoo = Noun('шампу́нь', 'шампу́н', 'ь', 'm', False, questions, inp)
 
     # f
-    pen = Noun('ручка', 'ручк', 'а', 'f', False, questions, inp)
-    story = Noun('история', 'истори', 'я', 'f', False, questions, inp)
-    week = Noun('неделя', 'недел', 'я', 'f', False, questions, inp)
-    autumn = Noun('осень', 'осен', 'ь', 'f', False, questions, inp)
+    pen = Noun('ру́чка', 'ру́чк', 'а', 'f', False, questions, inp)
+    story = Noun('истóрия', 'истóри', 'я', 'f', False, questions, inp)
+    week = Noun('недéля', 'недéл', 'я', 'f', False, questions, inp)
+    autumn = Noun('óсень', 'óсен', 'ь', 'f', False, questions, inp)
 
     # n
-    movement = Noun('движение', 'движени', 'е', 'n', False, questions, inp)
-    morning = Noun('утро', 'утр', 'о', 'n', False, questions, inp)
+    movement = Noun('движéние', 'движéни', 'е', 'n', False, questions, inp)
+    morning = Noun('у́тро', 'у́тр', 'о', 'n', False, questions, inp)
 
     for i in range(len(all_nouns)):
         p = rnd.randint(0, 1)
@@ -1833,22 +1861,22 @@ def prt():
     all_verbs = []
 
     # 1st conj
-    do = Verb('делать', 'дел', 'ать', questions, inp)
-    stroll = Verb('гулять', 'гул', 'ять', questions, inp)
-    have = Verb('иметь', 'им', 'еть', questions, inp)
-    split = Verb('колоть', 'кол', 'оть', questions, inp)
+    do = Verb('дéлать', 'дел', 'ать', questions, inp)
+    stroll = Verb('гуля́ть', 'гул', 'ять', questions, inp)
+    have = Verb('имéть', 'им', 'еть', questions, inp)
+    split = Verb('колóть', 'кол', 'оть', questions, inp)
 
     # 2nd conj
-    phone = Verb('звонить', 'звон', 'ить', questions, inp)
+    phone = Verb('звони́ть', 'звон', 'ить', questions, inp)
 
     # special 1st conj
-    give = Verb('давать', 'д', 'авать', questions, inp)
-    dance = Verb('танцевать', 'танц', 'евать', questions, inp)
-    wash = Verb('мыть', 'м', 'ыть', questions, inp)
-    become = Verb('стать', '', 'стать', questions, inp)
-    put_on = Verb('надеть', 'на', 'деть', questions, inp)
-    accept = Verb('принять', 'при', 'нять', questions, inp)
-    die = Verb('умереть', 'ум', 'ереть', questions, inp)
+    give = Verb('давáть', 'д', 'авать', questions, inp)
+    dance = Verb('танцевáть', 'танц', 'евать', questions, inp)
+    wash = Verb('мы́ть', 'м', 'ыть', questions, inp)
+    become = Verb('стáть', '', 'стать', questions, inp)
+    put_on = Verb('надéть', 'на', 'деть', questions, inp)
+    accept = Verb('приня́ть', 'при', 'нять', questions, inp)
+    die = Verb('умéреть', 'ум', 'ереть', questions, inp)
 
     pronouns = list(pronounsn.keys())
     for a in range(len(all_verbs)):
@@ -1922,12 +1950,16 @@ def lpat():
     example2 = '-> желала \n-> желало \n-> желали'
     learn2 = 'In я and ты forms, the verb still changes according to the gender of the \nsubject (the person ' \
              'performing the action). \nNotably, вы form always uses plural, even to refer to only one person.'
+    learn3 = 'None of the special first conjugation rules apply (нять, ыть, е/овать, etc). \nJust change the ending ' \
+             'as shown- EXCEPT for -ереть verbs, in which you \nalso remove the second e and don\'t add л, so that ' \
+             'you have \nthe verb stem + ер, ера, еро, ери.'
 
     learn_lbl1 = ttk.Label(lpatw, text=learn1)
     endings_lbl = ttk.Label(lpatw, text=endings)
     example_lbl1 = ttk.Label(lpatw, text=example1)
     example_lbl2 = ttk.Label(lpatw, text=example2)
     learn_lbl2 = ttk.Label(lpatw, text=learn2)
+    learn_lbl3 = ttk.Label(lpatw, text=learn3)
 
     def gopat():
         lpatw.withdraw()
@@ -1938,15 +1970,16 @@ def lpat():
 
     learn_lbl1.place(x=5, y=5)
     endings_lbl.place(x=5, y=40)
-    example_lbl1.place(x=130, y=40)
-    example_lbl2.place(x=172, y=55)
-    learn_lbl2.place(x=5, y=113)
+    example_lbl1.place(x=145, y=40)
+    example_lbl2.place(x=187, y=55)
+    learn_lbl2.place(x=5, y=110)
+    learn_lbl3.place(x=5, y=162)
 
-    pat_button.place(x=5, y=170)
-    golessons.place(x=115, y=170)
+    pat_button.place(x=5, y=230)
+    golessons.place(x=115, y=230)
 
     lpatw.title('Learn past tense')
-    lpatw.geometry('400x200+425+250')
+    lpatw.geometry('400x260+425+225')
 def pat():
     global mode
     mode = 'past tense'
@@ -1983,22 +2016,20 @@ def pat():
     all_verbs = []
 
     # 1st conj
-    do = Verb('делать', 'дел', 'ать', questions, inp)
-    stroll = Verb('гулять', 'гул', 'ять', questions, inp)
-    have = Verb('иметь', 'им', 'еть', questions, inp)
-    split = Verb('колоть', 'кол', 'оть', questions, inp)
+    know = Verb('знáть', 'зн', 'ать', questions, inp)
+    stand = Verb('стóять', 'сто', 'ять', questions, inp)
+    sit = Verb('пéть', 'п', 'еть', questions, inp)
 
     # 2nd conj
-    phone = Verb('звонить', 'звон', 'ить', questions, inp)
+    ask = Verb('спрóсить', 'спрос', 'ить', questions, inp)
+    drink = Verb('вы́пить', 'вып', 'ить', questions, inp)
 
     # special 1st conj
-    give = Verb('давать', 'д', 'авать', questions, inp)
-    dance = Verb('танцевать', 'танц', 'евать', questions, inp)
-    wash = Verb('мыть', 'м', 'ыть', questions, inp)
-    become = Verb('стать', '', 'стать', questions, inp)
-    put_on = Verb('надеть', 'на', 'деть', questions, inp)
-    accept = Verb('принять', 'при', 'нять', questions, inp)
-    die = Verb('умереть', 'ум', 'ереть', questions, inp)
+    give_back = Verb('отдавáть', 'отд', 'авать', questions, inp)
+    kiss = Verb('целовáть', 'цел', 'овать', questions, inp)
+    forget = Verb('забы́ть', 'заб', 'ыть', questions, inp)
+    reach = Verb('достáть', 'до', 'стать', questions, inp)
+    understand = Verb('пóнять', 'по', 'нять', questions, inp)
 
     pronouns = list(pronounsn.keys())
     pronouns.pop(0)
