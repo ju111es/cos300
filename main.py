@@ -70,7 +70,13 @@ class Noun:
         self.d = [[self.nom_stem], [self.nom_stem]]
         self.i = [[self.nom_stem], [self.nom_stem]]
         self.cases = [self.g, self.a, self.p, self.d, self.i]
-        self.plural = self.nom_stem
+        if self.nom_end != '':
+            self.plural = self.noun.rstrip(self.noun[-1])
+            if self.nom_end == 'я́':
+                # for whatever reason this one counts as two characters
+                self.plural = self.plural.rstrip(self.plural[-1])
+        else:
+            self.plural = self.noun
         # letters stand for genitive, accusative, prepositional, dative, and instrumental (cases).
         # nouns have different endings in each case depending on the letter they end in,
         # as well as different plural endings in both the nominative (default) case and others.
@@ -848,7 +854,31 @@ class Verb:
         nw.geometry('350x80')
 
 mw = Tk()
-def mainsetup():
+
+lcmw = Tk()
+cmw = Tk()
+lgcw = Tk()
+gcw = Tk()
+lacw = Tk()
+acw = Tk()
+lpcw = Tk()
+pcw = Tk()
+ldcw = Tk()
+dcw = Tk()
+licw = Tk()
+icw = Tk()
+lprtw = Tk()
+prtw = Tk()
+lpatw = Tk()
+patw = Tk()
+lw = Tk()
+windows = [lcmw, cmw, lgcw, gcw, lacw, acw, lpcw, pcw, ldcw, dcw, licw, icw, lprtw, prtw, lpatw, patw, lw]
+
+def home():
+    for item in windows:
+        item.withdraw()
+    mw.deiconify()
+
     greeting = ttk.Label(mw, text='Welcome! What would you like to practice?')
 
     gogc = ttk.Button(mw, text='Genitive Case', command=gc)
@@ -860,8 +890,8 @@ def mainsetup():
     goprt = ttk.Button(mw, text='Present Tense', command=prt)
     gopat = ttk.Button(mw, text='Past Tense', command=pat)
 
-    tutlbl = ttk.Label(mw, text='Or, go to')
-    gotuts = ttk.Button(mw, text='Lessons', command=lessons)
+    lessonslbl = ttk.Label(mw, text='Or, go to')
+    golessons = ttk.Button(mw, text='Lessons', command=lessons)
 
     greeting.place(x=20, y=18)
 
@@ -874,8 +904,8 @@ def mainsetup():
     goprt.place(x=135, y=80)
     gopat.place(x=135, y=110)
 
-    tutlbl.place(x=20,y=214)
-    gotuts.place(x=75,y=210)
+    lessonslbl.place(x=20, y=214)
+    golessons.place(x=75, y=210)
 
     mw.geometry('280x245+485+230')
     mw.title('Русские Упражения')
@@ -889,47 +919,21 @@ def tutorial(string):
 
 def lessons():
     mw.withdraw()
-    lw = Tk()
+    for item in windows:
+        item.withdraw()
 
     greeting = ttk.Label(lw, text='Welcome! What would you like to learn?')
 
-    def golgc():
-        lw.withdraw()
-        lgc()
-    lgc_button = ttk.Button(lw, text='Genitive case', command=golgc)
-    def golac():
-        lw.withdraw()
-        lac()
-    lac_button = ttk.Button(lw, text='Accusative case', command=golac)
-    def golpc():
-        lw.withdraw()
-        lpc()
-    lpc_button = ttk.Button(lw, text='Prepositional case', command=golpc)
-    def goldc():
-        lw.withdraw()
-        ldc()
-    ldc_button = ttk.Button(lw, text='Dative case', command=goldc)
-    def golic():
-        lw.withdraw()
-        lic()
-    lic_button = ttk.Button(lw, text='Instrumental case', command=golic)
+    lgc_button = ttk.Button(lw, text='Genitive case', command=lgc)
+    lac_button = ttk.Button(lw, text='Accusative case', command=lac)
+    lpc_button = ttk.Button(lw, text='Prepositional case', command=lpc)
+    ldc_button = ttk.Button(lw, text='Dative case', command=ldc)
+    lic_button = ttk.Button(lw, text='Instrumental case', command=lic)
 
-    def golcm():
-        lw.withdraw()
-        lcm()
-    lcm_button = ttk.Button(lw, text='Consonant mutation', command=golcm)
-    def golpresent():
-        lw.withdraw()
-        lprt()
-    lpresent_button = ttk.Button(lw, text='Present tense', command=golpresent)
-    def golpast():
-        lw.withdraw()
-        lpat()
-    lpast_button = ttk.Button(lw, text='Past tense', command=golpast)
+    lcm_button = ttk.Button(lw, text='Consonant mutation', command=lcm)
+    lpresent_button = ttk.Button(lw, text='Present tense', command=lprt)
+    lpast_button = ttk.Button(lw, text='Past tense', command=lpat)
 
-    def home():
-        lw.withdraw()
-        mw.deiconify()
     gohome = ttk.Button(lw, text='Home', command=home)
 
     lgc_button.place(x=20, y=50)
@@ -944,12 +948,15 @@ def lessons():
     greeting.place(x=20, y=18)
     lw.geometry('280x245+485+230')
     lw.title('Русские Уроки')
+    lw.deiconify()
+    lw.mainloop()
 
 mode = None
 # the mode will be relevant when checking answers, mostly in case practice
 
 def lcm():
-        lcmw = Tk()
+        cmw.withdraw()
+        lw.withdraw()
         learn = 'In Russian, some consonants "mutate" in certain verb conjugations.\n' \
                 'Most commonly, this happens in -ать verbs (in every conjugation)\nand in -ить and -еть ' \
                 'second conjugation verbs (in the я form only).\nSo, which consonants mutate?'
@@ -962,10 +969,7 @@ def lcm():
         m_lbl2 = ttk.Label(lcmw, text=mutants2)
         exception_lbl = ttk.Label(lcmw, text=exception)
 
-        def gocm():
-            lcmw.withdraw()
-            cm()
-        cm_button = ttk.Button(lcmw, text='Practice consonant mutation', command=gocm)
+        cm_button = ttk.Button(lcmw, text='Practice consonant mutation', command=cm)
         golessons = ttk.Button(lcmw, text='All lessons', command=lessons)
         cm_button.place(x=5,y=185)
         golessons.place(x=170,y=185)
@@ -976,6 +980,8 @@ def lcm():
         exception_lbl.place(x=150, y=90)
         lcmw.geometry('380x215+435+245')
         lcmw.title('Learn consonant mutation')
+        lcmw.deiconify()
+        lcmw.mainloop()
 def cm():
     global mode
     mode = 'consonant mutation'
@@ -987,15 +993,14 @@ def cm():
 
     # get rid of main window
     mw.withdraw()
+    # get rid of other windows that could be open (so, just the Learn for this)
+    lcmw.withdraw()
 
     # tutorial explaining how to use, user can just close it once they've read it
     tut = 'Enter just the present tense conjugation of the verb according to the pronoun in front of it' \
           'and press Enter. (Don\'t enter the pronoun, or it won\'t work correctly! ' \
           'Just the verb.)\n\nSome of these conjugations will have consonant mutation, some won\'t.'
     tutorial(tut)
-
-    # set up new window
-    cmw = Tk()
 
     # in case someone doesn't know the subject yet or needs a refresher,
     # they can open a window anytime with a concise explanation.
@@ -1085,13 +1090,10 @@ def cm():
     golcm.place(x=190, y=1)
 
     # to get to the home page or tutorials page
-    def home():
-        cmw.withdraw()
-        mw.deiconify()
     gohome = ttk.Button(cmw, text='Home', command=home)
-    gotuts = ttk.Button(cmw, text='Tutorials', command=lessons)
+    golessons = ttk.Button(cmw, text='Lessons', command=lessons)
     gohome.place(x=5, y=330)
-    gotuts.place(x=83, y=330)
+    golessons.place(x=83, y=330)
 
     cmw.geometry('300x360+475+170')
     cmw.title('Consonant mutation')
@@ -1105,10 +1107,12 @@ def cm():
         cmw.update()
         y1 += 30
 
+    cmw.deiconify()
     cmw.mainloop()
 
 def lgc():
-        lgcw = Tk()
+        lw.withdraw()
+        gcw.withdraw()
         learn = 'The genitive case in Russian answers the questions "of what?",\n"whose?", and "what is absent?"' \
                 '(Amounts, possession, and negation).\nSo, how is it applied?'
         gen1 = 'Nouns ending in -> become:\n' \
@@ -1124,10 +1128,7 @@ def lgc():
         g_lbl2 = ttk.Label(lgcw, text=gen2)
         exception_lbl = ttk.Label(lgcw, text=exception)
 
-        def gogc():
-            lgcw.withdraw()
-            gc()
-        gc_button = ttk.Button(lgcw, text='Practice genitive case', command=gogc)
+        gc_button = ttk.Button(lgcw, text='Practice genitive case', command=gc)
         golessons = ttk.Button(lgcw, text='All lessons', command=lessons)
         gc_button.place(x=5, y=260)
         golessons.place(x=130, y=260)
@@ -1138,6 +1139,7 @@ def lgc():
         exception_lbl.place(x=5, y=220)
         lgcw.geometry('380x290+435+205')
         lgcw.title('Learn genitive case')
+        lgcw.deiconify()
         lgcw.mainloop()
 def gc():
     global mode
@@ -1149,12 +1151,11 @@ def gc():
     correct_count = 0
 
     mw.withdraw()
+    lgcw.withdraw()
 
     tut = 'Enter the genitive form of the given nominative noun. There are singular and plural nouns given- ' \
           'enter the genitive form matching the given nominative form.'
     tutorial(tut)
-
-    gcw = Tk()
 
     lgc_lbl = ttk.Label(gcw, text='Don\'t know the genitive case?')
     golgc = ttk.Button(gcw, text='Learn', command=lgc)
@@ -1242,13 +1243,10 @@ def gc():
     lgc_lbl.place(x=5, y=1)
     golgc.place(x=190, y=1)
 
-    def home():
-        gcw.withdraw()
-        mw.deiconify()
     gohome = ttk.Button(gcw, text='Home', command=home)
-    gotuts = ttk.Button(gcw, text='Tutorials', command=lessons)
+    golessons = ttk.Button(gcw, text='Lessons', command=lessons)
     gohome.place(x=5, y=330)
-    gotuts.place(x=83, y=330)
+    golessons.place(x=83, y=330)
 
     gcw.geometry('300x360+475+170')
     gcw.title('Genitive case')
@@ -1261,19 +1259,21 @@ def gc():
         gcw.update()
         y1 += 30
 
+    gcw.deiconify()
     gcw.mainloop()
 
 def lac():
-    lacw = Tk()
+    lw.withdraw()
+    acw.withdraw()
     learn = 'The accusative case in Russian is applied to the object\nof a sentence- ' \
             'Something that is having an action performed on it.\nSo, how is it applied?'
     acc1 = 'Nouns ending in -> become:\n' \
            'hard consonant -> ADD а \nй -> я \nь (masc) -> я \nа -> у \nя -> ю\n' \
-           'Inanimate masculine nouns do not change. \nFeminine nouns ending in  do not change. \n' \
+           'Inanimate* masculine nouns do not change. \nFeminine nouns ending in  do not change. \n' \
            'Neutral nouns do not change.'
     acc2 = 'And, plural:\n' \
-           'Animate nouns use their gentive plural; \nInanimate objects use their nominative \n(regular) plural.'
-    anim = 'An animate noun can think and perform actions on its own- \nsuch as a human or an animal.\n' \
+           'Animate nouns use their gentive \nplural; inanimate objects use their \nnominative (regular) plural.'
+    anim = '*An animate noun can think and perform actions on its own- \nsuch as a human or an animal.\n' \
            'An inanimate noun cannot- such as a plant, table, or rock.'
 
     learn_lbl = ttk.Label(lacw, text=learn)
@@ -1293,9 +1293,10 @@ def lac():
     learn_lbl.place(x=5, y=5)
     a_lbl1.place(x=5, y=65)
     a_lbl2.place(x=170, y=65)
-    anim_lbl.place(x=5, y=210)
+    anim_lbl.place(x=5, y=215)
     lacw.geometry('380x300+435+200')
     lacw.title('Learn accusative case')
+    lacw.deiconify()
     lacw.mainloop()
 def ac():
     global mode
@@ -1307,12 +1308,11 @@ def ac():
     correct_count = 0
 
     mw.withdraw()
+    lacw.withdraw()
 
     tut = 'Enter the accusative form of the given nominative noun. There are singular and plural nouns given- ' \
           'enter the accusative form matching the given nominative form.'
     tutorial(tut)
-
-    acw = Tk()
 
     lac_lbl = ttk.Label(acw, text='Don\'t know the accusative case?')
     golac = ttk.Button(acw, text='Learn', command=lac)
@@ -1397,13 +1397,10 @@ def ac():
     lac_lbl.place(x=5, y=1)
     golac.place(x=195, y=1)
 
-    def home():
-        acw.withdraw()
-        mw.deiconify()
     gohome = ttk.Button(acw, text='Home', command=home)
-    gotuts = ttk.Button(acw, text='Tutorials', command=lessons)
+    golessons = ttk.Button(acw, text='Lessons', command=lessons)
     gohome.place(x=5, y=330)
-    gotuts.place(x=83, y=330)
+    golessons.place(x=83, y=330)
 
     acw.geometry('280x360+485+170')
     acw.title('Accusative case')
@@ -1416,35 +1413,35 @@ def ac():
         acw.update()
         y1 += 30
 
+    acw.deiconify()
     acw.mainloop()
 
 def lpc():
-        lpcw = Tk()
-        learn = 'The prepositional case in Russian is used to indicate position,\nwith the prepositions ' \
-                'в, на, and о (in/at, on/at, and about).\nSo, how is it applied?'
-        prep1 = 'Nouns ending in -> become:\n' \
-               'hard consonant -> ADD e \nь (fem) -> и \nия -> ии \nие -> ии \nall other nouns -> e'
-        prep2 = 'And, plural:\n' \
-               'hard consonant, a, o -> ах \nall other nouns -> ях'
+    lw.withdraw()
+    pcw.withdraw()
+    learn = 'The prepositional case in Russian is used to indicate position,\nwith the prepositions ' \
+            'в, на, and о (in/at, on/at, and about).\nSo, how is it applied?'
+    prep1 = 'Nouns ending in -> become:\n' \
+           'hard consonant -> ADD e \nь (fem) -> и \nия -> ии \nие -> ии \nall other nouns -> e'
+    prep2 = 'And, plural:\n' \
+           'hard consonant, a, o -> ах \nall other nouns -> ях'
 
-        learn_lbl = ttk.Label(lpcw, text=learn)
-        p_lbl1 = ttk.Label(lpcw, text=prep1)
-        p_lbl2 = ttk.Label(lpcw, text=prep2)
+    learn_lbl = ttk.Label(lpcw, text=learn)
+    p_lbl1 = ttk.Label(lpcw, text=prep1)
+    p_lbl2 = ttk.Label(lpcw, text=prep2)
 
-        def gopc():
-            lpcw.withdraw()
-            pc()
-        pc_button = ttk.Button(lpcw, text='Practice prepositional case', command=gopc)
-        golessons = ttk.Button(lpcw, text='All lessons', command=lessons)
-        pc_button.place(x=5, y=160)
-        golessons.place(x=160, y=160)
+    pc_button = ttk.Button(lpcw, text='Practice prepositional case', command=pc)
+    golessons = ttk.Button(lpcw, text='All lessons', command=lessons)
+    pc_button.place(x=5, y=160)
+    golessons.place(x=160, y=160)
 
-        learn_lbl.place(x=5, y=5)
-        p_lbl1.place(x=5, y=65)
-        p_lbl2.place(x=170, y=65)
-        lpcw.geometry('380x190+435+255')
-        lpcw.title('Learn prepositional case')
-        lpcw.mainloop()
+    learn_lbl.place(x=5, y=5)
+    p_lbl1.place(x=5, y=60)
+    p_lbl2.place(x=170, y=60)
+    lpcw.geometry('380x190+435+255')
+    lpcw.title('Learn prepositional case')
+    lpcw.deiconify()
+    lpcw.mainloop()
 def pc():
     global mode
     mode = 'prepositional'
@@ -1455,12 +1452,11 @@ def pc():
     correct_count = 0
 
     mw.withdraw()
+    lpcw.withdraw()
 
     tut = 'Enter the prepositional form of the given nominative noun. There are singular and plural nouns given- ' \
           'enter the prepositional form matching the given nominative form.'
     tutorial(tut)
-
-    pcw = Tk()
 
     lpc_lbl = ttk.Label(pcw, text='Don\'t know the prepositional case?')
     golpc = ttk.Button(pcw, text='Learn', command=lpc)
@@ -1548,13 +1544,10 @@ def pc():
     lpc_lbl.place(x=5, y=1)
     golpc.place(x=195, y=1)
 
-    def home():
-        pcw.withdraw()
-        mw.deiconify()
     gohome = ttk.Button(pcw, text='Home', command=home)
-    gotuts = ttk.Button(pcw, text='Tutorials', command=lessons)
+    golessons = ttk.Button(pcw, text='Lessons', command=lessons)
     gohome.place(x=5, y=330)
-    gotuts.place(x=83, y=330)
+    golessons.place(x=83, y=330)
 
     pcw.geometry('300x360+475+170')
     pcw.title('Prepositional case')
@@ -1567,10 +1560,12 @@ def pc():
         pcw.update()
         y1 += 30
 
+    pcw.deiconify()
     pcw.mainloop()
 
 def ldc():
-    ldcw = Tk()
+    lw.withdraw()
+    dcw.withdraw()
     learn = 'The dative case in Russian is used to refer to the indirect object,\nof a sentence. ' \
             '(ex: "I sent her a letter"- "letter" is the direct object, \n"her" is the indirect object.)\n' \
             'It is also used fot most applications of the prepostion по; with verbs \nпомогать and советовать ' \
@@ -1588,10 +1583,7 @@ def ldc():
     d_lbl2 = ttk.Label(ldcw, text=dat2)
     d_lbl3 = ttk.Label(ldcw, text=dat3)
 
-    def godc():
-        ldcw.withdraw()
-        dc()
-    dc_button = ttk.Button(ldcw, text='Practice dative case', command=godc)
+    dc_button = ttk.Button(ldcw, text='Practice dative case', command=dc)
     golessons = ttk.Button(ldcw, text='All lessons', command=lessons)
     dc_button.place(x=5, y=250)
     golessons.place(x=120, y=250)
@@ -1602,6 +1594,7 @@ def ldc():
     d_lbl3.place(x=180, y=135)
     ldcw.geometry('380x280+435+210')
     ldcw.title('Learn dative case')
+    ldcw.deiconify()
     ldcw.mainloop()
 def dc():
     global mode
@@ -1613,12 +1606,11 @@ def dc():
     correct_count = 0
 
     mw.withdraw()
+    ldcw.withdraw()
 
     tut = 'Enter the dative form of the given nominative noun. There are singular and plural nouns given- ' \
           'enter the dative form matching the given nominative form.'
     tutorial(tut)
-
-    dcw = Tk()
 
     lpc_lbl = ttk.Label(dcw, text='Don\'t know the dative case?')
     golpc = ttk.Button(dcw, text='Learn', command=ldc)
@@ -1703,14 +1695,10 @@ def dc():
     lpc_lbl.place(x=5, y=1)
     golpc.place(x=195, y=1)
 
-    def home():
-        dcw.withdraw()
-        mw.deiconify()
-
     gohome = ttk.Button(dcw, text='Home', command=home)
-    gotuts = ttk.Button(dcw, text='Tutorials', command=lessons)
+    golessons = ttk.Button(dcw, text='Lessons', command=lessons)
     gohome.place(x=5, y=330)
-    gotuts.place(x=83, y=330)
+    golessons.place(x=83, y=330)
 
     dcw.geometry('300x360+475+170')
     dcw.title('Dative case')
@@ -1723,10 +1711,12 @@ def dc():
         dcw.update()
         y1 += 30
 
+    dcw.deiconify()
     dcw.mainloop()
 
 def lic():
-    licw = Tk()
+    lw.withdraw()
+    icw.withdraw()
     learn = 'The instrumental case in Russian is used to indicate the concepts \nwith, by, and by means of. \n' \
             'It is also used with some prepositions (за, над, под, перед, между), \nto indicate season or part of ' \
             'day (утром = in the morning), and with \nбыл (was) & быть (will be). \n' \
@@ -1740,11 +1730,7 @@ def lic():
     i_lbl1 = ttk.Label(licw, text=in1)
     i_lbl2 = ttk.Label(licw, text=in2)
 
-    def goic():
-        licw.withdraw()
-        ic()
-
-    ic_button = ttk.Button(licw, text='Practice instrumental case', command=goic)
+    ic_button = ttk.Button(licw, text='Practice instrumental case', command=ic)
     golessons = ttk.Button(licw, text='All lessons', command=lessons)
     ic_button.place(x=5, y=240)
     golessons.place(x=155, y=240)
@@ -1754,6 +1740,7 @@ def lic():
     i_lbl2.place(x=180, y=105)
     licw.geometry('380x270+435+215')
     licw.title('Learn instrumental case')
+    licw.deiconify()
     licw.mainloop()
 def ic():
     global mode
@@ -1765,12 +1752,11 @@ def ic():
     correct_count = 0
 
     mw.withdraw()
+    licw.withdraw()
 
     tut = 'Enter the instrumental form of the given nominative noun. There are singular and plural nouns given- ' \
           'enter the instrumental form matching the given nominative form.'
     tutorial(tut)
-
-    icw = Tk()
 
     lic_lbl = ttk.Label(icw, text='Don\'t know the instrumental case?')
     golic = ttk.Button(icw, text='Learn', command=lic)
@@ -1853,14 +1839,10 @@ def ic():
     lic_lbl.place(x=5, y=1)
     golic.place(x=195, y=1)
 
-    def home():
-        icw.withdraw()
-        mw.deiconify()
-
     gohome = ttk.Button(icw, text='Home', command=home)
-    gotuts = ttk.Button(icw, text='Tutorials', command=lessons)
+    golessons = ttk.Button(icw, text='Lessons', command=lessons)
     gohome.place(x=5, y=330)
-    gotuts.place(x=83, y=330)
+    golessons.place(x=83, y=330)
 
     icw.geometry('300x360+475+170')
     icw.title('Instrumental case')
@@ -1873,10 +1855,12 @@ def ic():
         icw.update()
         y1 += 30
 
+    icw.deiconify()
     icw.mainloop()
 
 def lprt():
-    lprtw = Tk()
+    lw.withdraw()
+    prtw.withdraw()
     learn1 = 'Verbs are conjugated in many different ways in the present tense.\n' \
             'First, there are two conjugation groups:'
     firstconj1 = '1st conjugation: \nя ___ю \nты ___ешь \nон ___ет'
@@ -1945,11 +1929,7 @@ def lprt():
     eret_lbl2 = ttk.Label(lprtw, text=eret)
     eret_lbl3 = ttk.Label(lprtw, text=eret_ex)
 
-    def goprt():
-        lprtw.withdraw()
-        prt()
-
-    prt_button = ttk.Button(lprtw, text='Practice present tense', command=goprt)
+    prt_button = ttk.Button(lprtw, text='Practice present tense', command=prt)
     golessons = ttk.Button(lprtw, text='All lessons', command=lessons)
 
     learn_lbl1.place(x=5, y=5)
@@ -1988,6 +1968,8 @@ def lprt():
 
     lprtw.geometry('380x560+435+70')
     lprtw.title('Learn present tense')
+    lprtw.deiconify()
+    lprtw.mainloop()
 def prt():
     global mode
     mode = 'present tense'
@@ -1998,14 +1980,13 @@ def prt():
     correct_count = 0
 
     mw.withdraw()
+    lprtw.withdraw()
 
     tut = 'Enter just the present tense conjugation of the verb according to the pronoun in front of it ' \
           'and press Enter. (Don\'t enter the pronoun, or it won\'t work correctly! ' \
           'Just the verb.)\n\nNone of these conjugations will undergo consonant mutation- ' \
           'this mode is just for present tense practice!'
     tutorial(tut)
-
-    prtw = Tk()
 
     inp1 = ttk.Entry(prtw)
     inp2 = ttk.Entry(prtw)
@@ -2097,13 +2078,10 @@ def prt():
     lcm_lbl.place(x=5, y=1)
     golcm.place(x=150, y=1)
 
-    def home():
-        prtw.withdraw()
-        mw.deiconify()
     gohome = ttk.Button(prtw, text='Home', command=home)
-    gotuts = ttk.Button(prtw, text='Tutorials', command=lessons)
+    golessons = ttk.Button(prtw, text='Lessons', command=lessons)
     gohome.place(x=5, y=390)
-    gotuts.place(x=83, y=390)
+    golessons.place(x=83, y=390)
 
     prtw.geometry('300x420+475+140')
     prtw.title('Present tense')
@@ -2116,11 +2094,13 @@ def prt():
         prtw.update()
         y1 += 30
 
+    prtw.deiconify()
     prtw.mainloop()
     all_verbs = []
 
 def lpat():
-    lpatw = Tk()
+    lw.withdraw()
+    patw.withdraw()
     learn1 = 'The past tense in Russian is formed according to gender of the subject. \nThe ending (-ть) is removed,' \
              'and one of these endings is added: '
     endings = 'masculine (он): -л \nfeminine (она): -ла \nneutral (оно): -ло \nplural (мы, вы, они): -ли'
@@ -2139,11 +2119,7 @@ def lpat():
     learn_lbl2 = ttk.Label(lpatw, text=learn2)
     learn_lbl3 = ttk.Label(lpatw, text=learn3)
 
-    def gopat():
-        lpatw.withdraw()
-        pat()
-
-    pat_button = ttk.Button(lpatw, text='Practice past tense', command=gopat)
+    pat_button = ttk.Button(lpatw, text='Practice past tense', command=pat)
     golessons = ttk.Button(lpatw, text='All lessons', command=lessons)
 
     learn_lbl1.place(x=5, y=5)
@@ -2158,6 +2134,8 @@ def lpat():
 
     lpatw.title('Learn past tense')
     lpatw.geometry('400x260+425+225')
+    lpatw.deiconify()
+    lpatw.mainloop()
 def pat():
     global mode
     mode = 'past tense'
@@ -2168,12 +2146,11 @@ def pat():
     correct_count = 0
 
     mw.withdraw()
+    lpatw.withdraw()
 
     tut = 'Enter just the past tense conjugation of the verb according to the pronoun in front of it ' \
           'and press Enter. (Don\'t enter the pronoun, or it won\'t work correctly! Just the verb.)'
     tutorial(tut)
-
-    patw = Tk()
 
     inp1 = ttk.Entry(patw, width=20)
     inp2 = ttk.Entry(patw)
@@ -2196,7 +2173,7 @@ def pat():
     # 1st conj
     know = Verb('знáть', 'зн', 'ать', questions, inp, 'knew')
     stand = Verb('стóять', 'сто', 'ять', questions, inp, 'stood')
-    sit = Verb('пéть', 'п', 'еть', questions, inp, 'sat')
+    sing = Verb('пéть', 'п', 'еть', questions, inp, 'sang')
 
     # 2nd conj
     ask = Verb('спрóсить', 'спрос', 'ить', questions, inp, 'asked')
@@ -2258,14 +2235,10 @@ def pat():
     lpat_lbl.place(x=5, y=1)
     golpat.place(x=145, y=1)
 
-    # to get to the home page or tutorials page
-    def home():
-        patw.withdraw()
-        mw.deiconify()
     gohome = ttk.Button(patw, text='Home', command=home)
-    gotuts = ttk.Button(patw, text='Tutorials', command=lessons)
+    golessons = ttk.Button(patw, text='Lessons', command=lessons)
     gohome.place(x=5, y=330)
-    gotuts.place(x=83, y=330)
+    golessons.place(x=83, y=330)
 
     patw.geometry('305x360+472+170')
     patw.title('Past tense')
@@ -2278,6 +2251,8 @@ def pat():
         patw.update()
         y1 += 30
 
+    patw.deiconify()
     patw.mainloop()
 
-mainsetup()
+
+home()
