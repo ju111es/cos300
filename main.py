@@ -6,6 +6,12 @@ import random as rnd
 
 from idlelib.tooltip import Hovertip as Ht
 
+# привет :D и доброе пожаловать!!
+# я надеюсь, что это легко понять- comments may be in weird orders just because of the order in which i did things,
+# и как все изменил через время
+# будьте добрый со мной :') я сделала лучшо, что я могла делать и я думаю, что это хорош...
+# ведь, это достаточно хорош для меня :P
+
 all_verbs = []
 all_nouns = []
 
@@ -376,7 +382,7 @@ class Noun:
                              '\nIf you need a refresher on the ' + str(mode) + ' case, click Learn.'
             elif wrong_plurality:
                 correction = 'Make sure you are applying the ' + str(mode) + ' form \nmatching the given nominative form.'
-            elif spellcheck(i) != False:
+            elif spellcheck(i) is not False:
                 error = spellcheck(i)
                 correction = error[1] + ' cannot follow ' + error[0] + '.'
             else:
@@ -385,6 +391,12 @@ class Noun:
                 if i == self.nom_stem or i == self.nom_stem + 'ь' and i != self.g[1][1]:
                     correction = 'Usually o or e is added to a stem ending in a double consonant.' \
                                  '\nIf you need a refresher on the genitive case, click Learn.'
+                aend1 = self.nom_end == 'а' or self.nom_end == 'á'
+                aend2 = self.nom_end == 'я' or self.nom_end == 'я́'
+                oliststem = self.nom_stem[-2] in olist
+                if oliststem:
+                    if aend1 and i[-2] == 'о' or aend2 and i[-3] == 'о':
+                        correction = 'An unstressed o cannot follow ж, ц, ч, ш, or щ- \ninstead, use e.'
             elif mode == 'accusative':
                 if self.gender == 'm' and self.animate is False and i in self.g:
                     correction = 'Inanimate masculine nouns do not change \nin the accusative case.' \
@@ -400,13 +412,13 @@ class Noun:
                 if self.nom_end == 'я' and self.nom_stem[-1] == 'и' and i[-1] == 'е':
                     correction = 'ия becomes ии, not ие.' \
                                  '\nIf you need a refresher on the dative case, click Learn.'
-                elif self.nom_end == 'е' and self.nom_stem[-1] == 'и' and i[-1] == 'и':
+                elif self.nom_end == 'е' and self.nom_stem[-1] == 'и' and i == ''.join(self.p[0]):
                     correction = 'Unlike the prepositional, ие and е nouns behave the same \nin the dative case. \n' \
                                  'If you need a refresher on the dative case, click Learn.'
             elif mode == 'instrumental':
-                if self.nom_stem[-1] in olist and self.nom_end != 'á' and i[-2] == 'о':
+                if form != self.plural and self.nom_stem[-1] in olist and self.nom_end != 'á' and i[-2] == 'о':
                     correction = 'An unstressed o cannot follow ж, ц, ч, ш, or щ- \ninstead, use e.'
-                elif self.nom_end == 'я́' and i[-2] == 'е':
+                elif form != self.plural and self.nom_end == 'я́' and i[-2] == 'е':
                     correction = 'When stressed, е becomes ё.'
             if correction == '':
                 correction = 'Incorrect...'
@@ -422,7 +434,7 @@ class Noun:
         correction_label = ttk.Label(nw, text=correction)
         correction_label.place(x=8, y=8)
         cc_label.place(x=8, y=53)
-        nw.geometry('350x80')
+        nw.geometry('350x80+150+150')
 
 class Verb:
 
@@ -564,7 +576,6 @@ class Verb:
 
     def find_mutation(self):
         # some consonants 'mutate' in certain verb conjugations. this function predicts when they will.
-
         mutants = ['п', 'б', 'ф', 'м', 'в', 'к', 'т', 'д', 'з', 'г', 'с', 'х']
         if len(self.stem) > 0:
             lc = self.stem[-1]  # last consonant
@@ -584,23 +595,23 @@ class Verb:
                         return False
                 elif lc == 'к' or lc == 'т':
                     if self.stem[-2] == 'с':
-                        self.mutStem = self.stem.replace('с' + lc, 'щ')
+                        self.mutStem = self.stem.rstrip('с' + lc) + 'щ'
                         return True
                     elif lc == 'т' and self.ending == 'ать':
-                        self.mutStem = self.stem.replace(lc, 'ч')
+                        self.mutStem = self.stem.rstrip(lc) + 'ч'
                         return False
                     else:
-                        self.mutStem = self.stem.replace(lc, 'ч')
+                        self.mutStem = self.stem.rstrip(lc) + 'ч'
                         return True
                 elif lc == 'д' or lc == 'з' or lc == 'г':
                     if lc == 'г' or lc == 'д' and self.ending == 'ать':
-                        self.mutStem = self.stem.replace(lc, 'ж')
+                        self.mutStem = self.stem.rstrip(lc) + 'ж'
                         return False
                     else:
-                        self.mutStem = self.stem.replace(lc, 'ж')
+                        self.mutStem = self.stem.rstrip(lc) + 'ж'
                         return True
                 elif lc == 'с' or lc == 'х':
-                    self.mutStem = self.stem.replace(lc, 'ш')
+                    self.mutStem = self.stem.rstrip(lc) + 'ш'
                     return True
             else:
                 return False
@@ -655,7 +666,6 @@ class Verb:
         print(self.verb, 'conjugation:\n' + str(self.conjs), '\n')
 
     def cm_check(self):
-
         # if someone uses the wrong letter, not applying consonant mutation or applying it where they shouldn't,
         # this will recognize and explain their mistake.
 
@@ -704,7 +714,8 @@ class Verb:
         correction_label = ttk.Label(nw, text=correction)
         correction_label.place(x=8, y=8)
         cc_label.place(x=8, y=53)
-        nw.geometry('350x80')
+        nw.geometry('350x80+150+150')
+        nw.deiconify()
 
     def present_check(self):
         # fetch the pronoun currently attached to the verb
@@ -746,7 +757,6 @@ class Verb:
 
             # if they put it in past tense:
             past = i == self.mpast or i == self.fpast or i == self.npast or i == self.ppast
-            print(self.mpast, self.fpast, self.npast, self.ppast)
 
             # i don't want to have to remove the pronoun if someone enters it so it will just tell them not to (again)
             pronoun_entered = False
@@ -795,7 +805,7 @@ class Verb:
         correction_label = ttk.Label(nw, text=correction)
         correction_label.place(x=8, y=8)
         cc_label.place(x=8, y=53)
-        nw.geometry('350x80')
+        nw.geometry('350x80+150+150')
 
     def past_check(self):
         pronoun = self.qlist[all_verbs.index(self)][0]
@@ -851,7 +861,7 @@ class Verb:
         correction_label = ttk.Label(nw, text=correction)
         correction_label.place(x=8, y=8)
         cc_label.place(x=8, y=53)
-        nw.geometry('350x80')
+        nw.geometry('350x80+150+150')
 
 mw = Tk()
 
@@ -873,11 +883,14 @@ lpatw = Tk()
 patw = Tk()
 lw = Tk()
 windows = [lcmw, cmw, lgcw, gcw, lacw, acw, lpcw, pcw, ldcw, dcw, licw, icw, lprtw, prtw, lpatw, patw, lw]
+# all of the windows that will be used
 
 def home():
     for item in windows:
         item.withdraw()
+    # closing all of the other windows since they open upon being created
     mw.deiconify()
+    # in case the window has previously been withdrawn (if we're coming from the Lessons window or a practice mode)
 
     greeting = ttk.Label(mw, text='Welcome! What would you like to practice?')
 
@@ -908,10 +921,11 @@ def home():
     golessons.place(x=75, y=210)
 
     mw.geometry('280x245+485+230')
-    mw.title('Русские Упражения')
+    mw.title('Русские Упражения') # russian practice (exercises, precisely)
     mw.mainloop()
 
 def tutorial(string):
+    # pops up upon opening any mode
     addition = '\n\nHover your cursor over any question to see it in English. ' \
                '\nThere are stress marks in the questions to help with learning and answering questions; ' \
                'enter your answers without stress marks.'
@@ -947,7 +961,7 @@ def lessons():
     gohome.place(x=20, y=210)
     greeting.place(x=20, y=18)
     lw.geometry('280x245+485+230')
-    lw.title('Русские Уроки')
+    lw.title('Русские Уроки') # russian lessons
     lw.deiconify()
     lw.mainloop()
 
@@ -1027,20 +1041,20 @@ def cm():
 
     # 1st conj, no mutation
     read = Verb('читáть', 'чит', 'ать', questions, inp, 'read')
-    jump = Verb('при́гать', 'при́г', 'ать', questions, inp, 'jump')
+    jump = Verb('при́гать', 'приг', 'ать', questions, inp, 'jump')
     # 1st conj, mutation
     write = Verb('писáть', 'пис', 'ать', questions, inp, 'write')
-    cry = Verb('плáкать', 'плáк', 'ать', questions, inp, 'cry')
+    cry = Verb('плáкать', 'плак', 'ать', questions, inp, 'cry')
     # 1st conj, no mutation *because it's 1st conj*
-    think = Verb('ду́мать', 'ду́м', 'ать', questions, inp, 'think')
-    fall = Verb('пáдать', 'пáд', 'ать', questions, inp, 'fall')
+    think = Verb('ду́мать', 'дум', 'ать', questions, inp, 'think')
+    fall = Verb('пáдать', 'пад', 'ать', questions, inp, 'fall')
 
     # 2nd conj, no mutation
     speak = Verb('говори́ть', 'говор', 'ить', questions, inp, 'speak')
-    mean = Verb('знáчить', 'знáч', 'ить', questions, inp, 'mean')
+    mean = Verb('знáчить', 'знач', 'ить', questions, inp, 'mean')
     # 2nd conj, mutation
-    prepare = Verb('готóвить', 'готóв', 'ить', questions, inp, 'prepare')
-    clean = Verb('чи́стить', 'чи́ст', 'ить', questions, inp, 'clean')
+    prepare = Verb('готóвить', 'готов', 'ить', questions, inp, 'prepare')
+    clean = Verb('чи́стить', 'чист', 'ить', questions, inp, 'clean')
 
     pronouns = list(pronounsn.keys())
     for a in range(len(all_verbs)):
@@ -1095,10 +1109,6 @@ def cm():
     gohome.place(x=5, y=330)
     golessons.place(x=83, y=330)
 
-    cmw.geometry('300x360+475+170')
-    cmw.title('Consonant mutation')
-    all_verbs = []
-
     y1 = 30
     for q in range(10):
         lbl[q].place(x=5, y=y1)
@@ -1107,8 +1117,11 @@ def cm():
         cmw.update()
         y1 += 30
 
+    cmw.geometry('300x360+475+170')
+    cmw.title('Consonant mutation')
     cmw.deiconify()
     cmw.mainloop()
+    all_verbs = []
 
 def lgc():
         lw.withdraw()
