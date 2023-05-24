@@ -15,8 +15,8 @@ from idlelib.tooltip import Hovertip as Ht
 all_verbs = []
 all_nouns = []
 
-pronounsn = {'я':'i', 'ты':'you', 'он':'he', 'она':'she', 'оно':'it',
-             'мы':'we', 'вы':'you (polite/plural)', 'они':'they'}
+pronounsn = {'я': 'i', 'ты': 'you', 'он': 'he', 'она': 'she', 'оно': 'it',
+             'мы': 'we', 'вы': 'you (polite/plural)', 'они': 'they'}
 ilist = ['г', 'к', 'х', 'ж', 'ч', 'ш', 'щ']
 ylist = ilist
 ylist.append('ц')
@@ -30,6 +30,7 @@ correct_count = 0
 
 questions = []
 inp = []
+
 
 def spellcheck(string):
     # some vowels (ы, ю, я, sometimes o) can't follow certain consonants.
@@ -59,6 +60,7 @@ def spellcheck(string):
         else:
             pass
     return False
+
 
 class Noun:
     def __init__(self, noun, nom_stem, nom_end, gender, animate, english):
@@ -335,7 +337,7 @@ class Noun:
         if mode == 'genitive':
             a = ''.join(self.g[index])
         elif mode == 'accusative':
-             a = ''.join(self.a[index])
+            a = ''.join(self.a[index])
         elif mode == 'prepositional':
             a = ''.join(self.p[index])
         elif mode == 'dative':
@@ -376,7 +378,8 @@ class Noun:
                 correction = 'It looks like you applied the wrong case.' \
                              '\nIf you need a refresher on the ' + str(mode) + ' case, click Learn.'
             elif wrong_plurality:
-                correction = 'Make sure you are applying the ' + str(mode) + ' form \nmatching the given nominative form.'
+                correction = 'Make sure you are applying the ' + str(mode) + ' form ' \
+                                                                             '\nmatching the given nominative form.'
             elif spellcheck(i) is not False:
                 error = spellcheck(i)
                 correction = error[1] + ' cannot follow ' + error[0] + '.'
@@ -436,6 +439,7 @@ class Noun:
         cc_label.place(x=8, y=73)
         nw.geometry('350x100+150+150')
 
+
 class Verb:
 
     def __init__(self, verb, stem, ending, english):
@@ -447,14 +451,6 @@ class Verb:
         global all_verbs
         all_verbs.append(self)
 
-        self.conjugate()
-
-    def conjugate(self):
-        if self.ending == 'ить':
-            self.conjugation = 2
-        else:
-            self.conjugation = 1
-
         self.i = []
         self.you = []
         self.he = []
@@ -462,6 +458,14 @@ class Verb:
         self.you_p = []
         self.they = []
         self.conjs = [self.i, self.you, self.he, self.we, self.you_p, self.they]
+
+        self.conjugate()
+
+    def conjugate(self):
+        if self.ending == 'ить':
+            self.conjugation = 2
+        else:
+            self.conjugation = 1
 
         # in russian, there are first and second conjugation verbs.
         # verbs are conjugated differently based on what group they're in.
@@ -682,6 +686,7 @@ class Verb:
 
         global tried
         global correct_count1
+        global correct_count
 
         nw = Tk()
         nw.withdraw()
@@ -695,23 +700,27 @@ class Verb:
             elif self.present_check() != ':P':
                 # if the error isn't related to consonant mutation, it will be corrected here (unless it's just random)
                 correction = self.present_check()
-            elif spellcheck(i) != False:
+            elif spellcheck(i) is not False:
                 error = spellcheck(i)
                 correction = error[1] + ' cannot follow ' + error[0] + '.'
             else:
                 correction = 'Incorrect...'
         else:
             correction = 'Correct!'
+            correct_count += 1
             if self not in tried:
                 correct_count1 += 1
 
         tried.append(self)
-        cc = 'Questions correctly answered on first try: ' + str(correct_count1)
+        cc1 = 'Questions correctly answered on first try: ' + str(correct_count1)
+        cc_label1 = ttk.Label(nw, text=cc1)
+        cc = 'Total correct answers: ' + str(correct_count)
         cc_label = ttk.Label(nw, text=cc)
 
         correction_label = ttk.Label(nw, text=correction)
         correction_label.place(x=8, y=8)
-        cc_label.place(x=8, y=53)
+        cc_label1.place(x=8, y=53)
+        cc_label.place(x=8, y=73)
         nw.geometry('350x80+150+150')
         nw.deiconify()
 
@@ -734,6 +743,7 @@ class Verb:
 
         global tried
         global correct_count1
+        global correct_count
 
         nw = Tk()
         nw.withdraw()
@@ -790,22 +800,27 @@ class Verb:
             else:
                 # if they got it wrong in some other, unpredictable way:
                 correction = 'Incorrect...'
-            if mode == 'consonant mutation' and wrong_pronoun is False and past is False and pronoun_entered is False:
-                return ':P'
+                if mode == 'consonant mutation' and wrong_pronoun is False and past is False \
+                        and pronoun_entered is False:
+                    return ':P'
         else:
             correction = 'Correct!'
+            correct_count += 1
             if self not in tried:
                 correct_count1 += 1
 
-        tried.append(self)
-        cc = 'Questions correctly answered on first try: ' + str(correct_count1)
-        cc_label = ttk.Label(nw, text=cc)
+            tried.append(self)
+            cc1 = 'Questions correctly answered on first try: ' + str(correct_count1)
+            cc_label1 = ttk.Label(nw, text=cc1)
+            cc = 'Total correct answers: ' + str(correct_count)
+            cc_label = ttk.Label(nw, text=cc)
 
-        correction_label = ttk.Label(nw, text=correction)
-        correction_label.place(x=8, y=8)
-        cc_label.place(x=8, y=53)
-        nw.geometry('350x80+150+150')
-        nw.deiconify()
+            correction_label = ttk.Label(nw, text=correction)
+            correction_label.place(x=8, y=8)
+            cc_label1.place(x=8, y=53)
+            cc_label.place(x=8, y=73)
+            nw.geometry('350x80+150+150')
+            nw.deiconify()
 
     def past_check(self):
         pronoun = questions[all_verbs.index(self)][0]
@@ -822,6 +837,7 @@ class Verb:
 
         global tried
         global correct_count1
+        global correct_count
 
         nw = Tk()
         if i != a:
@@ -851,16 +867,20 @@ class Verb:
                 correction = 'Incorrect...'
         else:
             correction = 'Correct!'
+            correct_count += 1
             if self not in tried:
                 correct_count1 += 1
 
         tried.append(self)
-        cc = 'Questions correctly answered on first try: ' + str(correct_count1)
+        cc1 = 'Questions correctly answered on first try: ' + str(correct_count1)
+        cc_label1 = ttk.Label(nw, text=cc1)
+        cc = 'Total correct answers: ' + str(correct_count)
         cc_label = ttk.Label(nw, text=cc)
 
         correction_label = ttk.Label(nw, text=correction)
         correction_label.place(x=8, y=8)
-        cc_label.place(x=8, y=53)
+        cc_label1.place(x=8, y=53)
+        cc_label.place(x=8, y=73)
         nw.geometry('350x80+150+150')
 
     def conj_check(self):
@@ -894,6 +914,7 @@ lw = Tk()
 windows = [lcmw, cmw, lgcw, gcw, lacw, acw, lpcw, pcw, ldcw, dcw, licw, icw, lprtw, prtw, lpatw, patw, lw]
 # all of the windows that will be used
 # don't hate ! :P
+
 
 def home():
     for item in windows:
@@ -934,12 +955,14 @@ def home():
     mw.title('Русские Упражения') # russian practice (exercises, precisely)
     mw.mainloop()
 
+
 def tutorial(string):
     # pops up upon opening any mode
     addition = '\n\nHover your cursor over any question to see it in English. ' \
                '\nThere are stress marks in the questions to help with learning and answering questions; ' \
                'enter your answers without stress marks.'
     messagebox.showinfo(message=string + addition)
+
 
 def lessons():
     mw.withdraw()
@@ -974,6 +997,7 @@ def lessons():
     lw.title('Русские Уроки') # russian lessons
     lw.deiconify()
     lw.mainloop()
+
 
 mode = None
 
@@ -1096,6 +1120,7 @@ def casepractice(case, window, learn):
     # in case it's been closed
     window.mainloop()
 
+
 def verbpractice(tense, cm, window, learn):
     global tried
     global correct_count1
@@ -1184,13 +1209,13 @@ def verbpractice(tense, cm, window, learn):
         inp.append(inp11)
         inp.append(inp12)
 
-        ent11 = ttk.Button(cmw, command=all_verbs[10].func, text='Enter')
-        ent12 = ttk.Button(cmw, command=all_verbs[11].func, text='Enter')
+        ent11 = ttk.Button(window, command=all_verbs[10].conj_check, text='Enter')
+        ent12 = ttk.Button(window, command=all_verbs[11].conj_check, text='Enter')
         ent.append(ent11)
         ent.append(ent12)
 
-        lbl11 = ttk.Label(cmw, text=(' '.join(questions[10]) + '\n\n'))
-        lbl12 = ttk.Label(cmw, text=(' '.join(questions[11]) + '\n\n'))
+        lbl11 = ttk.Label(window, text=(' '.join(questions[10]) + '\n\n'))
+        lbl12 = ttk.Label(window, text=(' '.join(questions[11]) + '\n\n'))
         lbl.append(lbl11)
         lbl.append(lbl12)
 
@@ -1204,24 +1229,29 @@ def verbpractice(tense, cm, window, learn):
     golc.pack(side=RIGHT)
     lc_frame.place(x=5, y=3)
 
+    yval1 = 330
+    yval2 = 330
+    yval3 = 360
+    if mode == 'present tense':
+        yval1 += 60
+        yval2 += 60
+        yval3 += 60
+
     # to get to the home page or tutorials page
     gohome = ttk.Button(window, text='Home', command=home)
     golessons = ttk.Button(window, text='Lessons', command=lessons)
-    gohome.place(x=5, y=330)
-    golessons.place(x=83, y=330)
+    gohome.place(x=5, y=yval1)
+    golessons.place(x=83, y=yval2)
 
     y1 = 30
     for q in range(len(all_verbs)):
         lbl[q].place(x=5, y=y1)
-        inp[q].place(x=85, y=y1)
-        ent[q].place(x=215, y=y1-1)
-        cmw.update()
+        inp[q].place(x=87, y=y1)
+        ent[q].place(x=217, y=y1-1)
+        window.update()
         y1 += 30
 
-    yval = 360
-    if mode == 'present tense':
-        yval += 60
-    window.geometry('300x' + str(yval) + '+475+170')
+    window.geometry('300x' + str(yval3) + '+475+170')
     title = list(mode)
     title[0] = title[0].upper()
     title = ''.join(title)
@@ -1229,6 +1259,7 @@ def verbpractice(tense, cm, window, learn):
 
     window.deiconify()
     window.mainloop()
+
 
 def lcm():
         cmw.withdraw()
@@ -1280,6 +1311,7 @@ def cm():
     clean = Verb('чи́стить', 'чист', 'ить', 'clean')
 
     verbpractice('present', True, cmw, lcm)
+
 
 def lgc():
         lw.withdraw()
@@ -1343,6 +1375,7 @@ def gc():
 
     casepractice('genitive', gcw, lgc)
 
+
 def lac():
     lw.withdraw()
     acw.withdraw()
@@ -1403,6 +1436,7 @@ def ac():
 
     casepractice('accusative', acw, lac)
 
+
 def lpc():
     lw.withdraw()
     pcw.withdraw()
@@ -1455,6 +1489,7 @@ def pc():
     place = Noun('мéсто', 'мест', 'о', 'n', False, 'place')
 
     casepractice('prepositional', pcw, lpc)
+
 
 def ldc():
     lw.withdraw()
@@ -1513,6 +1548,7 @@ def dc():
 
     casepractice('dative', dcw, ldc)
 
+
 def lic():
     lw.withdraw()
     icw.withdraw()
@@ -1562,6 +1598,7 @@ def ic():
     morning = Noun('у́тро', 'утр', 'о', 'n', False, 'morning')
 
     casepractice('instrumental', icw, lic)
+
 
 def lprt():
     lw.withdraw()
@@ -1699,6 +1736,7 @@ def prt():
 
     verbpractice('present', False, prtw, lprt)
 
+
 def lpat():
     lw.withdraw()
     patw.withdraw()
@@ -1758,5 +1796,6 @@ def pat():
     understand = Verb('пóнять', 'по', 'нять', 'understood')
 
     verbpractice('past', False, patw, lpat)
+
 
 home()
